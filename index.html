@@ -39,7 +39,7 @@
 <p>[[vimeo-{102540316}-{640}x{480}]]</p>
 
 <ul>
-<li><p>** Visualize rendering progress**<br>
+<li><p><strong>Visualize rendering progress</strong><br>
 <em>A mission window showing each layer's rendering progress.</em></p></li>
 <li><p><strong>Layer/Frame custom render order</strong><br>
 <em>Define rendering priority by layer or frame, and choose rendering forward or backward.</em></p></li>
@@ -88,33 +88,36 @@
 
 <ol>
 <li>Put this file <code>dp_Domino.py</code> into your Maya script folder, restart maya if necessary.</li>
-<li>Copy the following code as <code>shelf button</code>(python).</li>
-</ol>
+<li>
+<p>Copy the following code as <code>shelf button</code>(python).</p>
 
 <div class="highlight highlight-python"><pre><span class="pl-k">import</span> dp_Domino
 <span class="pl-s3">reload</span>(dp_Domino)
 dp_Domino.init_dp_Domino.dp_init()</pre></div>
-
-<ol>
+</li>
 <li>Have a nice render.</li>
 </ol>
 
 <h2>
 <a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h2>
 
-<p>[video]
-1. Open the scene that you want to render.
-2. Press the shelf button of dp_Domino.
-3. Adjust frame range, renderable camera and check other settings.
-4. Press <code>READY</code> to open the progress window.
-5. Adjust layers' rendering order if you have multiple layers.
-6. Save scene.
-7. If you have other scenes need to add in sceneQueue, close the progress window. If not, jump to step 9.
-8. Repeat step 1 to 7.
-9. Add other scenes into sceneQueue if current scene is not the only one needs to be  rendered.
-10. Press <code>START</code> to start render.
-11. Hit <code>Esc</code> key if you need to stop, but when you rendering with V-ray, press <code>STOP</code> first and then <code>Esc</code> key.
-12. Wait for rendering progress complete and check images output.</p>
+<pre><code>[video]
+</code></pre>
+
+<ol>
+<li>Open the scene that you want to render.</li>
+<li>Press the shelf button of dp_Domino.</li>
+<li>Adjust frame range, renderable camera and check other settings.</li>
+<li>Press <code>READY</code> to open the progress window.</li>
+<li>Adjust layers' rendering order if you have multiple layers.</li>
+<li>Save scene.</li>
+<li>If you have other scenes need to add in sceneQueue, close the progress window. If not, jump to step 9.</li>
+<li>Repeat step 1 to 7.</li>
+<li>Add other scenes into sceneQueue if current scene is not the only one needs to be  rendered.</li>
+<li>Press <code>START</code> to start render.</li>
+<li>Hit <code>Esc</code> key if you need to stop, but when you rendering with V-ray, press <code>STOP</code> first and then <code>Esc</code> key.</li>
+<li>Wait for rendering progress complete and check images output.</li>
+</ol>
 
 <h2>
 <a id="scheme-map" class="anchor" href="#scheme-map" aria-hidden="true"><span class="octicon octicon-link"></span></a>Scheme Map</h2>
