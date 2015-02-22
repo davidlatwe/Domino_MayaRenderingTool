@@ -5,7 +5,8 @@ A python script for rendering in Maya renderView by frame.
 
 ## Features
 [[vimeo-{102540316}-{640}x{480}]]
-* ** Visualize rendering progress**  
+
+* **Visualize rendering progress**  
 *A mission window showing each layer's rendering progress.*
 
 * **Layer/Frame custom render order**  
@@ -46,19 +47,20 @@ A python script for rendering in Maya renderView by frame.
 
 
 ## Installation
- 1. Put this file `dp_Domino.py` into your Maya script folder, restart maya if necessary.
- 2. Copy the following code as `shelf button`(python).
-~~~python
-import dp_Domino
-reload(dp_Domino)
-dp_Domino.init_dp_Domino.dp_init()
-~~~
- 3. Have a nice render.
+1. Put this file `dp_Domino.py` into your Maya script folder, restart maya if necessary.
+2. Copy the following code as `shelf button`(python).
+
+   ```python
+   import dp_Domino
+   reload(dp_Domino)
+   dp_Domino.init_dp_Domino.dp_init()
+   ```
+3. Have a nice render.
 
 
 
 ## Usage
-[video]
+    [video]
 1. Open the scene that you want to render.
 2. Press the shelf button of dp_Domino.
 3. Adjust frame range, renderable camera and check other settings.
