@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Domino-mayarenderingtool by davidpower</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Domino-mayarenderingtool</h1>
+        <h2>A python script for Maya rendering in renderView frame by frame.</h2>
+        <a href="https://github.com/davidpower/Domino-MayaRenderingTool" class="button"><small>View project on</small> GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
+<a id="domino-mayarenderingtool" class="anchor" href="#domino-mayarenderingtool" aria-hidden="true"><span class="octicon octicon-link"></span></a>Domino-MayaRenderingTool</h1>
+
+<p>A python script for rendering in Maya renderView by frame.</p>
+
+<h2>
+<a id="features" class="anchor" href="#features" aria-hidden="true"><span class="octicon octicon-link"></span></a>Features</h2>
+
+<p>[[vimeo-{102540316}-{640}x{480}]]</p>
+
+<ul>
+<li><p>** Visualize rendering progress**<br>
+<em>A mission window showing each layer's rendering progress.</em></p></li>
+<li><p><strong>Layer/Frame custom render order</strong><br>
+<em>Define rendering priority by layer or frame, and choose rendering forward or backward.</em></p></li>
+<li><p><strong>Scenes rendering queue</strong><br>
+<em>Automatically switching files to render and available to auto saving file.</em></p></li>
+<li><p><strong>Custom frame range</strong><br>
+<em>Rendering sequence or non-sequence by custom range.</em></p></li>
+<li><p><strong>RenderJob layer</strong><br>
+<em>Multiple layers with different renderSettings but output same sequence name images.</em></p></li>
+<li><p><strong>Layer override remote</strong><br>
+<em>Create or adjust camera/frame's layer override attribute without switching layer.</em></p></li>
+<li><p><strong>Records rendering time</strong><br>
+<em>Record each frame's rendered time. V-Ray's renderSlave number can also be recorded.</em></p></li>
+<li><p><strong>Send email notice</strong><br>
+<em>Sending notice by the events you choose.</em></p></li>
+</ul>
+
+<h2>
+<a id="latest-version" class="anchor" href="#latest-version" aria-hidden="true"><span class="octicon octicon-link"></span></a>Latest Version</h2>
+
+<ul>
+<li><p><strong>1.0.0-Beta</strong></p></li>
+<li>
+<p>Supported Maya Version</p>
+
+<ul>
+<li><strong>Maya 2014</strong></li>
+<li><strong>Maya 2015</strong></li>
+<li><em>Others not tested yet, better with pySide.</em></li>
+</ul>
+</li>
+<li>
+<p>Supported platform</p>
+
+<ul>
+<li><strong>Windows</strong></li>
+<li>
+<em>Others not tested yet, should work.</em><br>
+</li>
+</ul>
+</li>
+</ul>
+
+<h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<ol>
+<li>Put this file <code>dp_Domino.py</code> into your Maya script folder, restart maya if necessary.</li>
+<li>Copy the following code as <code>shelf button</code>(python).</li>
+</ol>
+
+<div class="highlight highlight-python"><pre><span class="pl-k">import</span> dp_Domino
+<span class="pl-s3">reload</span>(dp_Domino)
+dp_Domino.init_dp_Domino.dp_init()</pre></div>
+
+<ol>
+<li>Have a nice render.</li>
+</ol>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<p>[video]
+1. Open the scene that you want to render.
+2. Press the shelf button of dp_Domino.
+3. Adjust frame range, renderable camera and check other settings.
+4. Press <code>READY</code> to open the progress window.
+5. Adjust layers' rendering order if you have multiple layers.
+6. Save scene.
+7. If you have other scenes need to add in sceneQueue, close the progress window. If not, jump to step 9.
+8. Repeat step 1 to 7.
+9. Add other scenes into sceneQueue if current scene is not the only one needs to be  rendered.
+10. Press <code>START</code> to start render.
+11. Hit <code>Esc</code> key if you need to stop, but when you rendering with V-ray, press <code>STOP</code> first and then <code>Esc</code> key.
+12. Wait for rendering progress complete and check images output.</p>
+
+<h2>
+<a id="scheme-map" class="anchor" href="#scheme-map" aria-hidden="true"><span class="octicon octicon-link"></span></a>Scheme Map</h2>
+
+<p>［pic]</p>
+
+<h2>
+<a id="known-issues" class="anchor" href="#known-issues" aria-hidden="true"><span class="octicon octicon-link"></span></a>Known Issues</h2>
+
+<ul>
+<li>
+<p><strong>The current frame number showing in time slider is one frame ahead than real rendering frame.</strong></p>
+
+<blockquote>
+<p>Might be maya's ui evaluation problem, yet image output is correct.</p>
+</blockquote>
+</li>
+<li>
+<p><strong>Maya went critical crash when you open renderSetting panel after automatically open next scene in sceneQueue.</strong></p>
+
+<blockquote>
+<p>Reason unknown. Try not to touch anything when using sceneQueue and it will work properly.</p>
+</blockquote>
+</li>
+</ul>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/davidpower/Domino-MayaRenderingTool/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/davidpower/Domino-MayaRenderingTool/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/davidpower/Domino-MayaRenderingTool"></a> is maintained by <a href="https://github.com/davidpower">davidpower</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
