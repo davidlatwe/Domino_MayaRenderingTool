@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 #
 #
-#	    ___       ___       ___       ___       ___       ___   
-#	   /\  \     /\  \     /\__\     /\  \     /\__\     /\  \  
-#	  /::\  \   /::\  \   /::L_L_   _\:\  \   /:| _|_   /::\  \ 
+#	    ___       ___       ___       ___       ___       ___
+#	   /\  \     /\  \     /\__\     /\  \     /\__\     /\  \
+#	  /::\  \   /::\  \   /::L_L_   _\:\  \   /:| _|_   /::\  \
 #	 /:/\:\__\ /:/\:\__\ /:/L:\__\ /\/::\__\ /::|/\__\ /:/\:\__\
 #	 \:\/:/  / \:\/:/  / \/_/:/  / \::/\/__/ \/|::/  / \:\/:/  /
-#	  \::/  /   \::/  /    /:/  /   \:\__\     |:/  /   \::/  / 
-#	   \/__/     \/__/     \/__/     \/__/     \/__/     \/__/  
-#														   ░                        
+#	  \::/  /   \::/  /    /:/  /   \:\__\     |:/  /   \::/  /
+#	   \/__/     \/__/     \/__/     \/__/     \/__/     \/__/
+#
 #
 #		@ Author     David Power
 #		@ Email 	 david962041@gmail.com
@@ -66,6 +66,9 @@ dp_Domino.init_dp_Domino.dp_init()
 
 # checking or not checking vrayDR slave's on/off status
 vrayDR_check_Slave = 1
+
+# kick out offline vrayDR slave
+vrayDR_kick_Slave = 1
 
 # make ui to pyQt style
 set_QtStyle = 1
@@ -231,27 +234,27 @@ class UI:
 		#''' rangeFrame '''
 		cmds.frameLayout('rangeFrame', l= 'Range Check', bgc= [0.31, 0.45, 0.20], cll= 1, cl= rangeFm_collapse, li= 33, bs= 'out', w= 192, h= 20 if rangeFm_collapse else 246)
 		cmds.formLayout('rangeCheckForm')
-		cmds.optionMenu('layerMenu', l= '', w= 147, cc= UI_Controls.dp_rangeCtrlGetLayerAttr)
+		cmds.optionMenu('layerMenu', l= '', w= 147, ann= 'Layer menu, won\'t change current render layer.', cc= UI_Controls.dp_rangeCtrlGetLayerAttr)
 		cmds.iconTextButton('layerTime', w= 20, h= 20, image= 'out_time.png', ann= 'Show Rendering Time Log', c= self.dp_layerMenuToRenderLog)
 		cmds.button('refresBtn', l= '', w= 6, h= 6, bgc= [.2, .3, .2], ann= 'Refresh layer optionMenu when error occurred.', c= resetEnvironment.dp_refreshLayerMenu_warning)
 		cmds.text('strFrmTxt', l= 'S', fn= 'tinyBoldLabelFont')
 		cmds.text('endFrmTxt', l= 'E', fn= 'tinyBoldLabelFont')
 		cmds.text('stpFrmTxt', l= 'B', fn= 'tinyBoldLabelFont')
-		cmds.floatField('strFrmFfd', w= 70, pre= 3, cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.startFrame', 'strFrm'))
+		cmds.floatField('strFrmFfd', w= 70, pre= 3, ann= 'Start frame.', cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.startFrame', 'strFrm'))
 		cmds.popupMenu('startFrame_popupMenu', p= 'strFrmFfd', pmc= partial(UI_Controls.dp_frameRangePopupMenuPostCmd, 'defaultRenderGlobals.startFrame', 'strFrmTxt'))
-		cmds.floatField('endFrmFfd', w= 70, pre= 3, cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.endFrame', 'endFrm'))
+		cmds.floatField('endFrmFfd', w= 70, pre= 3, ann= 'End frame.', cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.endFrame', 'endFrm'))
 		cmds.popupMenu('endFrame_popupMenu', p= 'endFrmFfd', pmc= partial(UI_Controls.dp_frameRangePopupMenuPostCmd, 'defaultRenderGlobals.endFrame', 'endFrmTxt'))
-		cmds.floatField('stpFrmFfd', w= 70, pre= 3, cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.byFrameStep', 'stpFrm'))
+		cmds.floatField('stpFrmFfd', w= 70, pre= 3, ann= 'By frame.', cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.byFrameStep', 'stpFrm'))
 		cmds.popupMenu('byFrameStep_popupMenu', p= 'stpFrmFfd', pmc= partial(UI_Controls.dp_frameRangePopupMenuPostCmd, 'defaultRenderGlobals.byFrameStep', 'stpFrmTxt'))
 		cmds.separator ('renumFSpt', st= 'in', h= 68, hr= 0)
-		cmds.text('renumFTxt', l= 'Re-Num')
+		cmds.text('renumFTxt', l= 'Re-Num', ann= 'Renumber frames.')
 		cmds.popupMenu('modifyExtension_popupMenu', p= 'renumFTxt', pmc= partial(UI_Controls.dp_frameRangePopupMenuPostCmd, 'defaultRenderGlobals.modifyExtension', 'renumFTxt'))
 		cmds.checkBox('renumFChk', l= '', cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.modifyExtension', 'renumF'))
 		cmds.text('strNumTxt', l= 'S', fn= 'smallPlainLabelFont', en= 0)
 		cmds.text('stpNumTxt', l= 'B', fn= 'smallPlainLabelFont', en= 0)
-		cmds.floatField('strNumFfd', w= 56, pre= 3, cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.startExtension', 'strNum'), en= 0)
+		cmds.floatField('strNumFfd', w= 56, pre= 3, ann= 'Start number.', cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.startExtension', 'strNum'), en= 0)
 		cmds.popupMenu('startExtension_popupMenu', p= 'strNumFfd', pmc= partial(UI_Controls.dp_frameRangePopupMenuPostCmd, 'defaultRenderGlobals.startExtension', 'strNumTxt'))
-		cmds.floatField('stpNumFfd', w= 56, pre= 3, cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.byExtension', 'stpNum'), en= 0)
+		cmds.floatField('stpNumFfd', w= 56, pre= 3, ann= 'By frame.', cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.byExtension', 'stpNum'), en= 0)
 		cmds.popupMenu('byExtension_popupMenu', p= 'stpNumFfd', pmc= partial(UI_Controls.dp_frameRangePopupMenuPostCmd, 'defaultRenderGlobals.byExtension', 'stpNumTxt'))
 		cmds.text('custmText', l= 'Custom range', fn= 'smallPlainLabelFont', ann= 'input single frame(x,) or a range(x-y,) or a step range(x-y@z).\nex: 1, 2, 5, 8-14, 13-6@2')
 		cmds.textField('custmTxtF', w= 147, text= '', ann= 'input single frame(x,) or a range(x-y,) or a step range(x-y@z).\n' +
@@ -266,7 +269,7 @@ class UI:
 
 		cmds.text('cameraTxt', l= 'Render Camera list', fn= 'smallPlainLabelFont')
 		cmds.textScrollList('cameraScr', w= 147, h= 57, fn= 'smallFixedWidthFont', dcc= 'print "camrea look"')
-		cmds.iconTextButton('overriBtn', w= 20, h= 20, image= 'overrideSettings_dim.png',
+		cmds.iconTextButton('overriBtn', w= 20, h= 20, image= 'overrideSettings_dim.png', ann= 'Set override or remove override.',
 										 c= 'cmds.iconTextButton("overriBtn", e= 1, ' +
 											'image= "overrideSettings" + ("" if "_dim" in cmds.iconTextButton("overriBtn", q= 1, image= 1) ' +
 											'and cmds.optionMenu("layerMenu", q= 1, v= 1) != "masterLayer" else "_dim") + ".png")')
@@ -276,8 +279,8 @@ class UI:
 																		'	cmds.menuItem("removeOverride_item", e= 1, en= 1)'))
 		cmds.menuItem('removeAllOverride_item', l= 'Remove all override', c= partial(UI_Controls.dp_removeCamOverride, 1))
 		cmds.menuItem('removeOverride_item', l= 'Remove override', c= partial(UI_Controls.dp_removeCamOverride, 0))
-		cmds.iconTextButton('addCamBtn', w= 20, h= 20, image= 'openAttribute.png', c= UI_Controls.dp_disrenderableCameraList)
-		cmds.iconTextButton('delCamBtn', w= 20, h= 20, image= 'closeAttribute.png', c= partial(UI_Controls.dp_adjRenderCamera, 0))
+		cmds.iconTextButton('addCamBtn', w= 20, h= 20, image= 'openAttribute.png', ann= 'List not renderable camera. Press green button to set selected renderable.', c= UI_Controls.dp_disrenderableCameraList)
+		cmds.iconTextButton('delCamBtn', w= 20, h= 20, image= 'closeAttribute.png', ann= 'Remove renderable camera from list.', c= partial(UI_Controls.dp_adjRenderCamera, 0))
 
 		st, et, bt = 36, 72-12 ,108-24
 		cmds.formLayout('rangeCheckForm', e= 1, af= [('layerMenu', 'top', 10 ), ('layerMenu', 'left', 16)])
@@ -312,15 +315,15 @@ class UI:
 		cmds.formLayout('fQueueForm')
 		cmds.textScrollList('fileScrollList', w= 189, h= 90, fn= 'smallFixedWidthFont', ams= 1, dkc= partial(UI_Controls.dp_sceneQueueAction, 'delete'),
 																						sc= 'if cmds.file(q= 1, sn= 1, shn= 1):\n	cmds.textScrollList("fileScrollList", e= 1, dii= 1)')
-		cmds.button('fileAddBtn', l= ' Add Scene', w= 117, h= 22, c= partial(UI_Controls.dp_sceneQueueAction, 'add'))
-		cmds.button('fileDelBtn', l= ' X', w= 24, h= 22, c= partial(UI_Controls.dp_sceneQueueAction, 'delete'))
+		cmds.button('fileAddBtn', l= ' Add Scene', w= 117, h= 22, ann= 'Add one scene into render queue.', c= partial(UI_Controls.dp_sceneQueueAction, 'add'))
+		cmds.button('fileDelBtn', l= ' X', w= 24, h= 22, ann= 'Remove selected scene from queue.', c= partial(UI_Controls.dp_sceneQueueAction, 'delete'))
 		cmds.button('fileUpBtn', l= '', en= 0, w= 22, h= 22)
 		cmds.button('fileDnBtn', l= '', en= 0, w= 22, h= 22)
-		cmds.iconTextButton('fileUpArrowBtn', image= 'arrowUp.png', w= 22, h= 22, c= partial(UI_Controls.dp_sceneQueueAction, 'moveUP'))
-		cmds.iconTextButton('fileDownArrowBtn', image= 'arrowDown.png', w= 22, h= 22, c= partial(UI_Controls.dp_sceneQueueAction, 'moveDown'))
+		cmds.iconTextButton('fileUpArrowBtn', image= 'arrowUp.png', w= 22, h= 22, ann= 'Move selected scene\'s render priority up.', c= partial(UI_Controls.dp_sceneQueueAction, 'moveUP'))
+		cmds.iconTextButton('fileDownArrowBtn', image= 'arrowDown.png', w= 22, h= 22, ann= 'Move selected scene\'s render priority down.', c= partial(UI_Controls.dp_sceneQueueAction, 'moveDown'))
 		cmds.separator ('fileGapSpt', st= 'in', w= 186)
-		cmds.checkBox('saveSceneChk', l= 'Save Scene', cc= 'sv = cmds.checkBox("saveSceneChk", q= 1, v= 1)\ncmds.checkBox("saveTmLogChk", e= 1, en= sv, v= sv)')
-		cmds.checkBox('saveTmLogChk', l= 'Save Time Log', en= 0)
+		cmds.checkBox('saveSceneChk', l= 'Save Scene', ann= 'Save scene before switch to next.', cc= 'sv = cmds.checkBox("saveSceneChk", q= 1, v= 1)\ncmds.checkBox("saveTmLogChk", e= 1, en= sv, v= sv)')
+		cmds.checkBox('saveTmLogChk', l= 'Save Time Log', ann= 'Save scene with time log.', en= 0)
 		cmds.formLayout('fQueueForm', e= 1, af= [('fileScrollList', 'top', 0), ('fileScrollList', 'left', 0)])
 		cmds.formLayout('fQueueForm', e= 1, af= [('fileDelBtn', 'top', 92), ('fileDelBtn', 'left', 0)])
 		cmds.formLayout('fQueueForm', e= 1, af= [('fileAddBtn', 'top', 92), ('fileAddBtn', 'left', 25)])
@@ -368,7 +371,7 @@ class UI:
 		cmds.checkBox('sendTLogChk', l= 'Send Time Log (Next release)', ann= 'Sending render time log with mail.', v= 0, en= 0, vis= 0)
 		cmds.text('mailToText', l= 'Send To :', ann= 'email address for getting mails', en= 0)
 		cmds.textField('mailToTxtF', w= 150, text= emailTo, ann= 'email address for getting mails', cc= MailSending.dp_saveMailSetting, en= 0)
-		cmds.iconTextButton('mailTesBtn', w= 25, h= 25, image= 'echoCommands.png', ann= 'sending a test mail.', c= partial(MailSending.dp_sendEmail, 'TEST'), en= 0)
+		cmds.iconTextButton('mailTesBtn', w= 25, h= 25, image= 'echoCommands.png', ann= 'send a testing mail.', c= partial(MailSending.dp_sendEmail, 'TEST'), en= 0)
 		cmds.text('NoticeText', l= 'Get Notice When :', en= 0)
 		cmds.checkBox('startMalChk', l= 'Render Start', ann= 'Get notice when render start.', v= 0, en= 0)
 		layerOnOff = 0
@@ -2838,21 +2841,22 @@ class vrayDRSupervisor:
 
 		global server_list
 		global server_status
-		offlineIP = list(set(offlineIP))
-		for IP in offlineIP:
-			try:
-				server_status[server_list.index(IP)] = 'Disable'
-				if cmds.getAttr('vraySettings.sys_distributed_rendering_on'):
-					cmds.warning('dp_Domino: vrayDR slave off-line : [' + IP + '], setted to [Disable]')
-			except:
-				pass
-		statusFile = open(mel.eval('vrayFindServersFile("server_status.tmp")'), 'w')
-		statusInfo = ''
-		for status in server_status:
-			statusInfo += status + '\n'
-		statusFile.write(statusInfo)
-		statusFile.close()
-		mel.eval('if(`window -ex VRayDR`){ vraySwitchServerStatus(); }')
+		if vrayDR_kick_Slave:
+			offlineIP = list(set(offlineIP))
+			for IP in offlineIP:
+				try:
+					server_status[server_list.index(IP)] = 'Disable'
+					if cmds.getAttr('vraySettings.sys_distributed_rendering_on'):
+						cmds.warning('dp_Domino: vrayDR slave off-line : [' + IP + '], setted to [Disable]')
+				except:
+					pass
+			statusFile = open(mel.eval('vrayFindServersFile("server_status.tmp")'), 'w')
+			statusInfo = ''
+			for status in server_status:
+				statusInfo += status + '\n'
+			statusFile.write(statusInfo)
+			statusFile.close()
+			mel.eval('if(`window -ex VRayDR`){ vraySwitchServerStatus(); }')
 
 
 
@@ -3246,7 +3250,7 @@ class resetEnvironment:
 			outputLog.write('')
 			outputLog.close()
 			print '	outputLog: file cleared.'
-		print 'dp_outputLogPath: ' + dp_outputLogPath
+		print 'outputLogPath: ' + dp_outputLogPath
 		
 		print '\n+ . + * + . + * + . + * + . + * + . + * + . + * + . + * + . + * + . + * + . + * + . + * + . + * + . + * + . +'
 		cmds.warning('dp_Domino: Reseted. For more Info please check scriptEditor.')
