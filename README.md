@@ -1,6 +1,7 @@
 # Domino-MayaRenderingTool
-A python script for rendering in Maya renderView by frame.
-
+***A python script for rendering in Maya renderView by frame.***  
+  
+![alt text](http://i.imgur.com/6hM9Tfn.png "dp_Domino")
 
 
 ## Features
