@@ -1,20 +1,22 @@
 # Domino-MayaRenderingTool
 ***A python script for rendering in Maya renderView by frame.***  
   
-![alt text](http://i.imgur.com/6hM9Tfn.png "dp_Domino")
+![alt text](http://i.imgur.com/2dMnoeQ.png "dp_Domino")
 
 
 ## Features
-[[vimeo-{102540316}-{640}x{480}]]
 
 * **Visualize rendering progress**  
 *A mission window showing each layer's rendering progress.*
+![alt text](http://i.imgur.com/OQdKNMj.png "Visualize rendering progress")
 
 * **Layer/Frame custom render order**  
 *Define rendering priority by layer or frame, and choose rendering forward or backward.*
+![alt text](http://i.imgur.com/cjAmyFU.png "Layer/Frame custom render order")
 
 * **Scenes rendering queue**  
 *Automatically switching files to render and available to auto saving file.*
+![alt text](http://i.imgur.com/llWPCfh.png "Scenes rendering queue")
 
 * **Custom frame range**  
 *Rendering sequence or non-sequence by custom range.*
@@ -61,7 +63,7 @@
 
 
 ## Usage
-    [video]
+    [video here]
 1. Open the scene that you want to render.
 2. Press the shelf button of dp_Domino.
 3. Adjust frame range, renderable camera and check other settings.
