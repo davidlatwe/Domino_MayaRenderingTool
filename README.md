@@ -75,11 +75,11 @@
 4. Press `READY` to open the progress window.
 5. Adjust layers' rendering order if you have multiple layers.
 6. Save scene.
-7. If you have other scenes need to add in sceneQueue, close the progressWindow. If not, jump to step9.
+7. If there's other scenes need to add in queue, close progressWindow. If not, jump to step9.
 8. Repeat step 1 to 7.
 9. Add other scenes into sceneQueue if current scene is not the only one needs to be  rendered.
 10. Press `START` to start render.
-11. Hit `Esc` key if you need to stop, but when rendering with V-ray, press `STOP` first and then `Esc`.
+11. Hit `Esc` if you need to stop, but when rendering with V-ray, press `STOP` first and then `Esc`.
 12. Wait for rendering progress complete and check images output.
 
 
