@@ -8,7 +8,8 @@
 
 * **Visualize rendering progress**  
 *A mission window showing each layer's rendering progress.*
-![alt text](http://i.imgur.com/OQdKNMj.png "Visualize rendering progress")
+
+ ![alt text](http://i.imgur.com/OQdKNMj.png "Visualize rendering progress")
 
 * **Layer/Frame custom render order**  
 *Define rendering priority by layer or frame, and choose rendering forward or backward.*
