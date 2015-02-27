@@ -6,38 +6,45 @@
 
 ## Features
 
-* #### **Visualize rendering progress**  
-  ###### *A mission window showing each layer's rendering progress.*
- ![alt text](http://i.imgur.com/OQdKNMj.png "Visualize rendering progress")
-
-* #### **Layer/Frame custom render order**  
-  ###### *Define rendering priority by layer or frame, and choose rendering forward or backward.*
- ![alt text](http://i.imgur.com/MDHod7e.png "Layer/Frame custom render order")
-
-* #### **Scenes rendering queue**  
-  ###### *Automatically switching files to render and available to auto saving file.*
- ![alt text](http://i.imgur.com/llWPCfh.png "Scenes rendering queue")
-
-* #### **Custom frame range**  
-  ###### *Rendering sequence or non-sequence by custom range.*
- ![alt text](http://i.imgur.com/vCvIt4q.png "Custom frame range")
-
-* #### **RenderJob layer**  
-  ###### *Multiple layers with different renderSettings but output same sequence name images.*
- ![alt text](http://i.imgur.com/auarUSI.png "RenderJob layer")
-
-* #### **Layer override remote**  
-  ###### *Create or adjust camera/frame's layer override attribute without switching layer.*
- ![alt text](http://i.imgur.com/hNS4xQj.png "Layer override remote")
-
-* #### **Records rendering time**  
-  ###### *Record each frame's rendered time. V-Ray's renderSlave number can also be recorded.*
- ![alt text](http://i.imgur.com/TGqEdGd.png "Records rendering time")
-
-* #### **Send email notice**  
-  ###### *Sending notice by the events you choose.*
- ![alt text](http://i.imgur.com/7AZmbs5.png "Send email notice")
-
+>* #### **Visualize rendering progress**  
+>  ###### *A mission window showing each layer's rendering progress.*
+> ![alt text](http://i.imgur.com/OQdKNMj.png "Visualize rendering progress")
+> - - -
+>
+>* #### **Layer/Frame custom render order**  
+>  ###### *Define rendering priority by layer or frame, and choose rendering forward or backward.*
+> ![alt text](http://i.imgur.com/MDHod7e.png "Layer/Frame custom render order")
+> - - -
+>
+>* #### **Scenes rendering queue**  
+>  ###### *Automatically switching files to render and available to auto saving file.*
+> ![alt text](http://i.imgur.com/llWPCfh.png "Scenes rendering queue")
+> - - -
+>
+>* #### **Custom frame range**  
+>  ###### *Rendering sequence or non-sequence by custom range.*
+> ![alt text](http://i.imgur.com/vCvIt4q.png "Custom frame range")
+> - - -
+>
+>* #### **RenderJob layer**  
+>  ###### *Multiple layers with different renderSettings but output same sequence name images.*
+> ![alt text](http://i.imgur.com/auarUSI.png "RenderJob layer")
+> - - -
+>
+>* #### **Layer override remote**  
+>  ###### *Create or adjust camera/frame's layer override attribute without switching layer.*
+> ![alt text](http://i.imgur.com/hNS4xQj.png "Layer override remote")
+> - - -
+>
+>* #### **Records rendering time**  
+>  ###### *Record each frame's rendered time. V-Ray's renderSlave number can also be recorded.*
+> ![alt text](http://i.imgur.com/TGqEdGd.png "Records rendering time")
+> - - -
+>
+>* #### **Send email notice**  
+>  ###### *Sending notice by the events you choose.*
+> ![alt text](http://i.imgur.com/7AZmbs5.png "Send email notice")
+> - - -
 
 
 ## Latest Version
