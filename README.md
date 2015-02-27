@@ -97,8 +97,8 @@
 
 
 ## Known Issues
-- **The current frame number showing in time slider is one frame ahead than real rendering frame.**
+- **The current frame number showing in time slider is one frame ahead than actual rendering frame.**
   > Might be maya's ui evaluation problem, yet image output is correct.
 
-- **Maya went critical crash when you open renderSetting panel after dp_domino automatically open next scene in sceneQueue.**
+- **Maya went critical crash when you open renderSetting panel after `dp_domino` automatically open next scene in `sceneQueue`.**
   > Reason unknown. Try not to touch anything when using sceneQueue and it will work properly.
