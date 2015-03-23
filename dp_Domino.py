@@ -15,10 +15,10 @@
 #		@ Email 	 david962041@gmail.com
 #
 #		@ File       dp_Domino.py
-#		@ FileVer	 1.0.0-Beta
+#		@ FileVer	 1.1.0-Beta
 #		@ MayaVer 	 2014, 2015 (other version not tested yet)
 #		@ Platform 	 Windows (other platform not tested yet)
-#		@ Date       2015-02-16
+#		@ Date       2015-03-11
 #
 #		@ Brief      rendering frame by frame inside renderView with V-ray, MentalRay and other mayaRenderer.
 #					 Press ESC to stop render.
@@ -62,28 +62,31 @@ dp_Domino.init_dp_Domino.dp_init()
 
 
 
-''' some boolean variables for custom change '''
+''' some variables for custom change '''
 
 # checking or not checking vrayDR slave's on/off status
-vrayDR_check_Slave = 1
+vrayDR_check_Slave = 1  # 1 or 0
 
 # kick out offline vrayDR slave
-vrayDR_kick_Slave = 1
+vrayDR_kick_Slave = 0  # 1 or 0
+
+# scoket timeout value for vray render slave connection test, connection might be unstable if value less than 1 sec
+vrayDR_timeout = 0.1  # float, unit: Sec
 
 # make ui to pyQt style
-set_QtStyle = 1
+set_QtStyle = 1  # 1 or 0
 
 # if off, sceneQueue function will disable
-can_uniqueTag = 1
+can_uniqueTag = 1  # 1 or 0
 
 # collapse Range setting frame in mainWindow when startup
-rangeFm_collapse = 0
+rangeFm_collapse = 0  # 1 or 0
 
 # for testing progressWindow's ui layout, skip mainWindow when startup
-directly_Show_domino_ProgressUI_forTest = 0
+directly_Show_domino_ProgressUI_forTest = 0  # 1 or 0
 
 # for testing progressWindow's ui layout, show all hidden ui in progressWindow
-show_Hidden_UI_in_domino_ProgressUI = 0
+show_Hidden_UI_in_domino_ProgressUI = 0  # 1 or 0
 
 
 
@@ -184,6 +187,7 @@ class UI:
 		cmds.formLayout('renderForm')
 		cmds.button('resetBtn', l= '', w= 6, h= 6, bgc= [.3, .2, .2], ann= 'Reset domino_mainUI when error occurred. DO NOT press while rendering.', c= resetEnvironment.dp_resetVar)
 		cmds.button('delAtBtn', l= '', w= 6, h= 6, bgc= [.2, .2, .4], ann= 'Delete logs and settings. DO NOT press while rendering.', c= resetEnvironment.dp_deletePRAttr)
+		cmds.button('vrSlaBtn', l= '', w= 6, h= 6, bgc= [.2, .3, .2], ann= 'settings for auto detect vrayDR slave connection', c= self.dp_vraySlaveDetectionSettings)
 		cmds.checkBox('backChk', l= 'Backward', cc= UI_Controls.dp_changeBackwardStatus, ann= 'Render frames backward. *Note: if "Frame Priority" is on, this change to global backward.')
 		cmds.checkBox('fProChk', l= 'Frame Priority', cc= UI_Controls.dp_changeFramePrioStatus, ann= 'Render one frame in each layers than go to next frame.\nBest for STEREO preview.')
 		cmds.text('gBackMk', l= '', h= 33, w= 2, bgc= [0.8, 0.4, 0.1], vis= 0)
@@ -214,6 +218,7 @@ class UI:
 
 		cmds.formLayout('renderForm', e= 1, af= [('resetBtn' , 'top',  2 ), ('resetBtn' , 'left', 3)])
 		cmds.formLayout('renderForm', e= 1, af= [('delAtBtn' , 'top',  12), ('delAtBtn' , 'left', 3)])
+		cmds.formLayout('renderForm', e= 1, af= [('vrSlaBtn' , 'top',  22), ('vrSlaBtn' , 'left', 3)])
 		cmds.formLayout('renderForm', e= 1, af= [('animChk'  , 'top',  5 ), ('animChk'  , 'left' , 58)])
 		cmds.formLayout('renderForm', e= 1, af= [('backChk'  , 'top', 25 ), ('backChk'  , 'left' , 58)])
 		cmds.formLayout('renderForm', e= 1, af= [('fProChk'  , 'top', 45 ), ('fProChk'  , 'left' , 58)])
@@ -460,6 +465,7 @@ class UI:
 		UI_Controls.dp_makePySideUI('renderForm', 'QWidget {color: None; background-color: None}')
 		UI_Controls.dp_makePySideUI('resetBtn', 'QPushButton {border: 1px solid FireBrick; border-radius: 2px;}')
 		UI_Controls.dp_makePySideUI('delAtBtn', 'QPushButton {border: 1px solid SteelBlue; border-radius: 2px;}')
+		UI_Controls.dp_makePySideUI('vrSlaBtn', 'QPushButton {border: 1px solid OliveDrab; border-radius: 2px;}')
 		UI_Controls.dp_makePySideUI('renderBtn', 'QPushButton {border: 1px solid DarkOrange; color: DarkOrange; background-color: #3B3B3B; border-radius: 3px;}')
 		UI_Controls.dp_makePySideUI('refresBtn', 'QPushButton {border: 1px solid OliveDrab; border-radius: 2px;}')
 
@@ -941,6 +947,30 @@ class UI:
 		if layer != 'No Renderable Layer':
 			if layer == 'masterLayer': layer = 'defaultRenderLayer'
 			self.dp_timeLogWindow(layer)
+
+
+	def dp_vraySlaveDetectionSettings(self, *args):
+
+		window = 'domino_slaveDetectionSetting'
+
+		if cmds.window(window, ex= 1):
+			cmds.deleteUI(window)
+
+		cmds.window(window, t= 'dp_VSDS', w= 200, h= 82, mxb= 0, mnb= 0, s= 0)
+		cmds.formLayout('domino_slaveDetectionSetting_Form')
+
+		cmds.checkBox('lookSlaveChk', l= 'Check connections', ann= 'Check VrayDR slave\'s connections.', v= vrayDR_check_Slave,
+									onc= 'dp_Domino.vrayDR_check_Slave = 1', ofc= 'dp_Domino.vrayDR_check_Slave = 0')
+		cmds.checkBox('kickSlaveChk', l= 'Kick out off-line', ann= 'Set off-line VrayDR slave to Disable.', v= vrayDR_kick_Slave,
+									onc= 'dp_Domino.vrayDR_kick_Slave = 1', ofc= 'dp_Domino.vrayDR_kick_Slave = 0')
+		cmds.floatFieldGrp('timeoutFFG', l= 'timeout: ', nf= 1, ann= 'For VrayDR slave connection test.\nMight be unstable if value less than 1 sec.', v1= vrayDR_timeout,
+									cc= 'dp_Domino.vrayDR_timeout = cmds.floatFieldGrp("timeoutFFG", q= 1, v= 1)[0]', el= 'sec')
+
+		cmds.formLayout('domino_slaveDetectionSetting_Form', e= 1, af= [('lookSlaveChk', 'top', 10 ), ('lookSlaveChk', 'left', 24)])
+		cmds.formLayout('domino_slaveDetectionSetting_Form', e= 1, af= [('kickSlaveChk', 'top', 30 ), ('kickSlaveChk', 'left', 24)])
+		cmds.formLayout('domino_slaveDetectionSetting_Form', e= 1, af= [('timeoutFFG', 'top', 50 ), ('timeoutFFG', 'left', -72)])
+		cmds.setParent( '..' )
+		cmds.showWindow(window)
 
 
 
@@ -2775,7 +2805,6 @@ class vrayDRSupervisor:
 
 		global server_list
 		global server_status
-		global dp_timeOut
 		server_list = self.dp_vrayDRGetSeversFile('server_list.tmp')
 		if server_list:
 			server_status = self.dp_vrayDRGetSeversFile('server_status.tmp')
@@ -2788,7 +2817,7 @@ class vrayDRSupervisor:
 					except:
 						port = mel.eval('getDefaultDRPort()')
 					prSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-					prSocket.settimeout(dp_timeOut)
+					prSocket.settimeout(vrayDR_timeout)
 					try:
 						result = prSocket.connect_ex((server_list[count], port))
 						if result == 0:
@@ -3339,7 +3368,6 @@ class init_dp_Domino:
 	def dp_init(self):
 
 		global dp_Rendering
-		global dp_timeOut
 		global dp_outputLogPath
 		global dp_sceneQueueBox
 
@@ -3347,7 +3375,6 @@ class init_dp_Domino:
 
 		if 'dp_Rendering' not in globals():
 			dp_Rendering = 0
-			dp_timeOut = 0.01 # sec
 			sceneName = cmds.file(q= 1, sn= 1, shn= 1) if cmds.file(q= 1, sn= 1, shn= 1) else 'untitled'
 			worksPath = cmds.workspace(q= 1, fn= 1)
 			thisDate = cmds.date(format='YYYYMMDDhhmmss')
