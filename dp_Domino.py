@@ -38,18 +38,20 @@
 #
 #	Instalation:
 #
-#		1. Put this file (dp_Domino.py) into your Maya script folder, restart maya if necessary.
+#		1. After download and extract zip, remove folder's name suffix "-master" ("Domino_MayaRenderingTool-master" -> "Domino_MayaRenderingTool").
 #
-#		2. Copy the following code as a python shelf button (do not copy the line with triple single quotes)
+#		2. Put the folder (Domino_MayaRenderingTool) into your Maya script folder, restart maya if necessary.
+#
+#		3. Copy the following code as a python shelf button (do not copy the line with triple single quotes)
 
 '''
-import dp_Domino
+import Domino_MayaRenderingTool.dp_Domino as dp_Domino
 reload(dp_Domino)
 dp_Domino.init_dp_Domino.dp_init()
 
 '''
 #
-#		3. Have a nice render.
+#		4. Have a nice render.
 #
 #
 
@@ -125,6 +127,7 @@ import sys
 import os
 import math
 import re
+import ast
 import socket
 
 # Try import pySide module
@@ -160,7 +163,7 @@ class UI:
 		unRenderableLayers = []
 
 		#''' scriptJob here '''
-		cmds.scriptJob(ac= ['defaultRenderGlobals.animation', UI_Controls.dp_animationOnOffStatus], p= window)
+		cmds.scriptJob(ac= ['defaultRenderGlobals.animation', partial(UI_Controls.dp_changeAnimationStatus, 0)], p= window)
 		cmds.scriptJob(ac= ['defaultRenderGlobals.currentRenderer', UI_Controls.dp_getRendererName], p= window)
 		cmds.scriptJob(ac= ['defaultResolution.width', UI_Controls.dp_changeResolution], p= window)
 		cmds.scriptJob(ac= ['defaultResolution.height', UI_Controls.dp_changeResolution], p= window)
@@ -191,7 +194,9 @@ class UI:
 		cmds.checkBox('backChk', l= 'Backward', cc= UI_Controls.dp_changeBackwardStatus, ann= 'Render frames backward. *Note: if "Frame Priority" is on, this change to global backward.')
 		cmds.checkBox('fProChk', l= 'Frame Priority', cc= UI_Controls.dp_changeFramePrioStatus, ann= 'Render one frame in each layers than go to next frame.\nBest for STEREO preview.')
 		cmds.text('gBackMk', l= '', h= 33, w= 2, bgc= [0.8, 0.4, 0.1], vis= 0)
-		cmds.checkBox('animChk', l= 'Animation', v= cmds.getAttr('defaultRenderGlobals.animation'), cc= UI_Controls.dp_changeAnimationStatus, ann= 'When rendering animation, this checkBox should turn on.')
+		animValue = cmds.getAttr('defaultRenderGlobals.animation')
+		cmds.checkBox('animChk', l= 'Animation', v= animValue, cc= partial(UI_Controls.dp_changeAnimationStatus, 1),
+								ann= 'When rendering animation, this checkBox should turn on.')
 		cmds.checkBox('delJChk', l= 'Delete Jobs', cc= UI_Controls.dp_changeDeleteJobStatus, ann= 'delete all renderJob layers after render is finished.')
 		cmds.iconTextButton('clrFixBtn', w= 25, h= 25, image= 'removeRenderable.png', ann= 'delete all renderJob layers RIGHT NOW.', c= Render_Controls.dp_deleteJobsAfterRender)
 		mel.eval('setTestResolutionVar(1)')
@@ -216,9 +221,9 @@ class UI:
 		cmds.iconTextButton('ImgDirBtn', image= 'rvKeepIt.png', w= 22, h= 22, ann= 'open images folder', c= partial(UI_Controls.dp_openImageFolder, '__imgRoot__'))
 		cmds.button('renderBtn', l= 'R E A D Y', bgc= [.85, .45, .2], w= 100, h= 30, c= self.dp_ProgressWindow)
 
-		cmds.formLayout('renderForm', e= 1, af= [('resetBtn' , 'top',  2 ), ('resetBtn' , 'left', 3)])
-		cmds.formLayout('renderForm', e= 1, af= [('delAtBtn' , 'top',  12), ('delAtBtn' , 'left', 3)])
-		cmds.formLayout('renderForm', e= 1, af= [('vrSlaBtn' , 'top',  22), ('vrSlaBtn' , 'left', 3)])
+		cmds.formLayout('renderForm', e= 1, af= [('resetBtn' , 'top',  2 ), ('resetBtn' , 'right', 3)])
+		cmds.formLayout('renderForm', e= 1, af= [('delAtBtn' , 'top',  12), ('delAtBtn' , 'right', 3)])
+		cmds.formLayout('renderForm', e= 1, af= [('vrSlaBtn' , 'top',  2), ('vrSlaBtn' , 'left', 3)])
 		cmds.formLayout('renderForm', e= 1, af= [('animChk'  , 'top',  5 ), ('animChk'  , 'left' , 58)])
 		cmds.formLayout('renderForm', e= 1, af= [('backChk'  , 'top', 25 ), ('backChk'  , 'left' , 58)])
 		cmds.formLayout('renderForm', e= 1, af= [('fProChk'  , 'top', 45 ), ('fProChk'  , 'left' , 58)])
@@ -242,33 +247,33 @@ class UI:
 		cmds.optionMenu('layerMenu', l= '', w= 147, ann= 'Layer menu, won\'t change current render layer.', cc= UI_Controls.dp_rangeCtrlGetLayerAttr)
 		cmds.iconTextButton('layerTime', w= 20, h= 20, image= 'out_time.png', ann= 'Show Rendering Time Log', c= self.dp_layerMenuToRenderLog)
 		cmds.button('refresBtn', l= '', w= 6, h= 6, bgc= [.2, .3, .2], ann= 'Refresh layer optionMenu when error occurred.', c= resetEnvironment.dp_refreshLayerMenu_warning)
-		cmds.text('strFrmTxt', l= 'S', fn= 'tinyBoldLabelFont')
-		cmds.text('endFrmTxt', l= 'E', fn= 'tinyBoldLabelFont')
-		cmds.text('stpFrmTxt', l= 'B', fn= 'tinyBoldLabelFont')
-		cmds.floatField('strFrmFfd', w= 70, pre= 3, ann= 'Start frame.', cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.startFrame', 'strFrm'))
+		cmds.text('strFrmTxt', l= 'S', fn= 'tinyBoldLabelFont', en = animValue)
+		cmds.text('endFrmTxt', l= 'E', fn= 'tinyBoldLabelFont', en = animValue)
+		cmds.text('stpFrmTxt', l= 'B', fn= 'tinyBoldLabelFont', en = animValue)
+		cmds.floatField('strFrmFfd', w= 70, pre= 3, ann= 'Start frame.', cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.startFrame', 'strFrm'), en = animValue)
 		cmds.popupMenu('startFrame_popupMenu', p= 'strFrmFfd', pmc= partial(UI_Controls.dp_frameRangePopupMenuPostCmd, 'defaultRenderGlobals.startFrame', 'strFrmTxt'))
-		cmds.floatField('endFrmFfd', w= 70, pre= 3, ann= 'End frame.', cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.endFrame', 'endFrm'))
+		cmds.floatField('endFrmFfd', w= 70, pre= 3, ann= 'End frame.', cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.endFrame', 'endFrm'), en = animValue)
 		cmds.popupMenu('endFrame_popupMenu', p= 'endFrmFfd', pmc= partial(UI_Controls.dp_frameRangePopupMenuPostCmd, 'defaultRenderGlobals.endFrame', 'endFrmTxt'))
-		cmds.floatField('stpFrmFfd', w= 70, pre= 3, ann= 'By frame.', cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.byFrameStep', 'stpFrm'))
+		cmds.floatField('stpFrmFfd', w= 70, pre= 3, ann= 'By frame.', cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.byFrameStep', 'stpFrm'), en = animValue)
 		cmds.popupMenu('byFrameStep_popupMenu', p= 'stpFrmFfd', pmc= partial(UI_Controls.dp_frameRangePopupMenuPostCmd, 'defaultRenderGlobals.byFrameStep', 'stpFrmTxt'))
 		cmds.separator ('renumFSpt', st= 'in', h= 68, hr= 0)
-		cmds.text('renumFTxt', l= 'Re-Num', ann= 'Renumber frames.')
+		cmds.text('renumFTxt', l= 'Re-Num', ann= 'Renumber frames.', en = animValue)
 		cmds.popupMenu('modifyExtension_popupMenu', p= 'renumFTxt', pmc= partial(UI_Controls.dp_frameRangePopupMenuPostCmd, 'defaultRenderGlobals.modifyExtension', 'renumFTxt'))
-		cmds.checkBox('renumFChk', l= '', cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.modifyExtension', 'renumF'))
+		cmds.checkBox('renumFChk', l= '', cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.modifyExtension', 'renumF'), en = animValue)
 		cmds.text('strNumTxt', l= 'S', fn= 'smallPlainLabelFont', en= 0)
 		cmds.text('stpNumTxt', l= 'B', fn= 'smallPlainLabelFont', en= 0)
 		cmds.floatField('strNumFfd', w= 56, pre= 3, ann= 'Start number.', cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.startExtension', 'strNum'), en= 0)
 		cmds.popupMenu('startExtension_popupMenu', p= 'strNumFfd', pmc= partial(UI_Controls.dp_frameRangePopupMenuPostCmd, 'defaultRenderGlobals.startExtension', 'strNumTxt'))
 		cmds.floatField('stpNumFfd', w= 56, pre= 3, ann= 'By frame.', cc= partial(UI_Controls.dp_setAttrSync, 'defaultRenderGlobals.byExtension', 'stpNum'), en= 0)
 		cmds.popupMenu('byExtension_popupMenu', p= 'stpNumFfd', pmc= partial(UI_Controls.dp_frameRangePopupMenuPostCmd, 'defaultRenderGlobals.byExtension', 'stpNumTxt'))
-		cmds.text('custmText', l= 'Custom range', fn= 'smallPlainLabelFont', ann= 'input single frame(x,) or a range(x-y,) or a step range(x-y@z).\nex: 1, 2, 5, 8-14, 13-6@2')
+		cmds.text('custmText', l= 'Custom range', fn= 'smallPlainLabelFont', ann= 'input single frame(x,) or a range(x-y,) or a step range(x-y@z).\nex: 1, 2, 5, 8-14, 13-6@2', en = animValue)
 		cmds.textField('custmTxtF', w= 147, text= '', ann= 'input single frame(x,) or a range(x-y,) or a step range(x-y@z).\n' +
 														   'ex: 1, 2, 5, 8-14, 13-6@2'
-													,  cc= partial(UI_Controls.dp_changeCustomFrame, '', 1))
+													,  cc= partial(UI_Controls.dp_changeCustomFrame, '', 1), en = animValue)
 		cmds.popupMenu()
 		cmds.menuItem(l= 'Set All', c= UI_Controls.dp_changeCustomFrameAll)
 		cmds.iconTextButton('clrDtaBtn', w= 20, h= 20, image= 'removeRenderable.png', ann= 'clear current layers\'s custom render range data.'
-																					, c= partial(UI_Controls.dp_clearAllCustomFrameData, 0))
+																					, c= partial(UI_Controls.dp_clearAllCustomFrameData, 0), en = animValue)
 		cmds.popupMenu()
 		cmds.menuItem(l= 'Clear All', c= partial(UI_Controls.dp_clearAllCustomFrameData, 1))
 
@@ -329,6 +334,7 @@ class UI:
 		cmds.separator ('fileGapSpt', st= 'in', w= 186)
 		cmds.checkBox('saveSceneChk', l= 'Save Scene', ann= 'Save scene before switch to next.', cc= 'sv = cmds.checkBox("saveSceneChk", q= 1, v= 1)\ncmds.checkBox("saveTmLogChk", e= 1, en= sv, v= sv)')
 		cmds.checkBox('saveTmLogChk', l= 'Save Time Log', ann= 'Save scene with time log.', en= 0)
+		cmds.checkBox('skipImgCkChk', l= 'Skip Output Check', ann= 'Skip checking image output after scene have rendered.')
 		cmds.formLayout('fQueueForm', e= 1, af= [('fileScrollList', 'top', 0), ('fileScrollList', 'left', 0)])
 		cmds.formLayout('fQueueForm', e= 1, af= [('fileDelBtn', 'top', 92), ('fileDelBtn', 'left', 0)])
 		cmds.formLayout('fQueueForm', e= 1, af= [('fileAddBtn', 'top', 92), ('fileAddBtn', 'left', 25)])
@@ -336,9 +342,10 @@ class UI:
 		cmds.formLayout('fQueueForm', e= 1, af= [('fileDnBtn', 'top', 92), ('fileDnBtn', 'left', 166)])
 		cmds.formLayout('fQueueForm', e= 1, af= [('fileUpArrowBtn', 'top', 92), ('fileUpArrowBtn', 'left', 143)])
 		cmds.formLayout('fQueueForm', e= 1, af= [('fileDownArrowBtn', 'top', 92), ('fileDownArrowBtn', 'left', 166)])
-		cmds.formLayout('fQueueForm', e= 1, af= [('fileGapSpt', 'bottom', 24), ('fileGapSpt', 'left', 2)])
-		cmds.formLayout('fQueueForm', e= 1, af= [('saveSceneChk', 'bottom', 4), ('saveSceneChk', 'left', 5)])
-		cmds.formLayout('fQueueForm', e= 1, af= [('saveTmLogChk', 'bottom', 4), ('saveTmLogChk', 'left', 92)])
+		cmds.formLayout('fQueueForm', e= 1, af= [('fileGapSpt', 'bottom', 44), ('fileGapSpt', 'left', 2)])
+		cmds.formLayout('fQueueForm', e= 1, af= [('saveSceneChk', 'bottom', 24), ('saveSceneChk', 'left', 5)])
+		cmds.formLayout('fQueueForm', e= 1, af= [('saveTmLogChk', 'bottom', 24), ('saveTmLogChk', 'left', 92)])
+		cmds.formLayout('fQueueForm', e= 1, af= [('skipImgCkChk', 'bottom', 4), ('skipImgCkChk', 'left', 5)])
 		cmds.setParent( '..' )
 		cmds.setParent( '..' )
 
@@ -380,7 +387,7 @@ class UI:
 		cmds.text('NoticeText', l= 'Get Notice When :', en= 0)
 		cmds.checkBox('startMalChk', l= 'Render Start', ann= 'Get notice when render start.', v= 0, en= 0)
 		layerOnOff = 0
-		for layer in cmds.ls(et= 'renderLayer'):
+		for layer in cmds.listConnections('renderLayerManager.renderLayerId', d= 1):
 			if cmds.getAttr(layer + '.renderable'):
 				layerOnOff += 0.5
 		cmds.checkBox('layerMalChk', l= 'Layer Finish', ann= 'Get notice when one layer finished.', v= int(layerOnOff), en= 0)
@@ -483,23 +490,28 @@ class UI:
 
 		if not dp_Rendering or not cmds.window(window, ex= 1):
 
-			cmds.window(window, title= 'Missions Progress', w= 100, h= 100, s= 0, mxb= 0, mnb= 0, ret= 1)
-
-			default_pbWindowWidth = 280
-			default_proBarLength = 160
-			default_longestLayerName = 60
-			
-			letterSize = 7
-			digiSize = 6.5
-			slashSize = 4
-
 			global renderMissionLayerSort
 			global allFrameRange
 
-			Render_Controls.dp_layerSort()
-			Render_Controls.dp_storeAllFrameRange()
+			customRangeCorrect = dataGetFormat.dp_checkCustomFrameRangeInputFormat()
+			if customRangeCorrect:
+				Render_Controls.dp_layerSort()
+				Render_Controls.dp_storeAllFrameRange()
+			else:
+				renderMissionLayerSort = []
+				allFrameRange = {}
 
 			if renderMissionLayerSort:
+
+				cmds.window(window, title= 'Missions Progress', w= 100, h= 100, s= 0, mxb= 0, mnb= 0, ret= 1)
+
+				default_pbWindowWidth = 280
+				default_proBarLength = 160
+				default_longestLayerName = 60
+				
+				letterSize = 7
+				digiSize = 6.5
+				slashSize = 4
 
 				pbWindowWidth = default_pbWindowWidth
 				proBarLength = default_proBarLength
@@ -574,8 +586,7 @@ class UI:
 				cmds.formLayout('myForm', e= 1, af= ['myRow', 'left', missionStringSize])
 				cmds.setParent( '..' )
 
-				value = mainFrameNum
-				cmds.progressBar('mainProBar', h= 12, maxValue= value, step= 1)
+				cmds.progressBar('mainProBar', h= 12, maxValue= mainFrameNum, step= 1)
 				cmds.formLayout('myBtnForm')
 				cmds.rowLayout('myBtnRow')
 				cmds.button('goPauseBtn', l= 'S T A R T', bgc= [0.2, 0.9, 1.0], w= pbWindowWidth - 56, h= 18, c= Render.dp_kickDomino)
@@ -667,19 +678,16 @@ class UI:
 					cmds.text((layer + 'ProTxtStatus'), l= str(layerFramesSum), fn= 'boldLabelFont')
 					cmds.formLayout('jobsProForm', e= 1, af= [((layer + 'ProTxtStatus'), 'top', proTxtTop), ((layer + 'ProTxtStatus'), 'right', statPos)])
 					#layer start frame
-					pBarPos = pbWindowWidth - proBarLength - 28
 					numberStr = str(int(startFrameStr) if commonTool.dp_canThisFloatBeInt(startFrameStr) else startFrameStr)
 					cmds.text((layer + 'ProTxtStart'), l= numberStr, fn= 'fixedWidthFont')
-					cmds.formLayout('jobsProForm', e= 1, af= [((layer + 'ProTxtStart'), 'top', proTxtTop), ((layer + 'ProTxtStart'), 'left', pBarPos)])
+					cmds.formLayout('jobsProForm', e= 1, af= [((layer + 'ProTxtStart'), 'top', proTxtTop), ((layer + 'ProTxtStart'), 'left', pbWindowWidth - proBarLength - 28)])
 					#layer end frame
 					numberStr = str(int(endFrameStr) if commonTool.dp_canThisFloatBeInt(endFrameStr) else endFrameStr)
 					cmds.text((layer + 'ProTxtEnd'), l= numberStr, fn= 'fixedWidthFont')
 					cmds.formLayout('jobsProForm', e= 1, af= [((layer + 'ProTxtEnd'), 'top', proTxtTop), ((layer + 'ProTxtEnd'), 'right', 32)])
 					#progressBar
-					pBarPos = 30
-					value = Render_Controls.dp_jobsCaculator(2, layer)
-					cmds.progressBar((layer + 'ProBar'), maxValue= value, w= proBarLength, h= 12, step= 1)
-					cmds.formLayout('jobsProForm', e= 1, af= [((layer + 'ProBar'), 'top', proBarTop + 1), ((layer + 'ProBar'), 'right', pBarPos)])
+					cmds.progressBar((layer + 'ProBar'), maxValue= Render_Controls.dp_jobsCaculator(2, layer), w= proBarLength, h= 12, step= 1)
+					cmds.formLayout('jobsProForm', e= 1, af= [((layer + 'ProBar'), 'top', proBarTop + 1), ((layer + 'ProBar'), 'right', 30)])
 					#folder link
 					cmds.iconTextButton((layer + 'folderBtn'), image= 'SP_DirIcon.png', w= 20, h= 20, vis= show_Hidden_UI_in_domino_ProgressUI, c= partial(UI_Controls.dp_openImageFolder, layer))# navButtonBrowse
 					cmds.formLayout('jobsProForm', e= 1, af= [((layer + 'folderBtn'), 'top', proBarTop - 4), ((layer + 'folderBtn'), 'right', 5)])
@@ -705,7 +713,8 @@ class UI:
 			else:
 				if cmds.window(window, ex= 1):
 					cmds.deleteUI(window)
-				cmds.confirmDialog( title='dp_Domino: Error', message= 'No layers are set to render.', button= ['Confirm'], defaultButton= 'Confirm', icon= 'warning')
+				if customRangeCorrect:
+					cmds.confirmDialog( title='dp_Domino: Error', message= 'No layers are set to render.', button= ['Confirm'], defaultButton= 'Confirm', icon= 'warning')
 
 
 	def dp_ProgressWindow_Qt(self):
@@ -750,7 +759,7 @@ class UI:
 
 		prLogTabList = []
 
-		#get renderLog attr list
+		# get renderLog attr list
 		if cmds.attributeQuery('dp_userAttr_timeLog_Tmp', node= layer, ex= 1):
 			if 'renderStartDate' in globals() and 'saved' not in cmds.getAttr(layer + '.dp_userAttr_timeLog_Tmp'):
 				prLogTabList.append('dp_userAttr_timeLog_Tmp')
@@ -760,7 +769,7 @@ class UI:
 				prLogTabList.extend(prLogList.split(','))
 
 		if prLogTabList:
-			#make tabs
+			# make tabs
 			for prLogName in prLogTabList:
 				prLogData = ''
 				if cmds.attributeQuery(prLogName, node= layer, ex= 1):
@@ -804,45 +813,24 @@ class UI:
 			prLogData_FrameRange = ''
 			prLogData_TotalTime = ''
 			prLogName = prLogTabForm.split('__')[1]
-			prLogData = cmds.getAttr(layer + '.' + prLogName)
+			prLogData = ast.literal_eval(cmds.getAttr(layer + '.' + prLogName))
 
-			# if formatte is old, update
-			if ';' not in prLogData or 'TT=' not in prLogData or '$' not in prLogData:
-				log = prLogData
-				log = log.replace('@', ';')
-				log = log.replace(':', '=')
-				log = log.replace('TT_', 'TT=')
-				log = '[' + log.replace(';', '];', 1)
-				logarr = []
-				for f in log.split(';'):
-					if '=' in f and not 'TT=' in f and not '$' in f:
-						f = f + '$0'
-					logarr.append(f)
-				prLogData = ';'.join(logarr)
-				cmds.setAttr(layer + '.' + prLogName, prLogData, type= 'string')
-
-			prLogDataSplit = prLogData.split(';')
-
-			#delete tab button
+			# delete tab button
 			cmds.iconTextButton(('prLogBtnDelete__' + prLogName + '__' + layer), w= 16, h= 16, image= 'SP_MessageBoxCritical.png', c= partial(UI_Controls.dp_logTabDelete, layer), p= prLogTabForm)
 			cmds.formLayout(prLogTabForm, e= 1, af= [(('prLogBtnDelete__' + prLogName + '__' + layer), 'top', 5), (('prLogBtnDelete__' + prLogName + '__' + layer), 'right', 5)])
 			
-			#get frame range     ------------------------------------------------------------------------------ # custom render range didn't show 
-			if prLogDataSplit[0].startswith('[') and prLogDataSplit[0].endswith(']'):
-				prLogData_FrameRange = prLogDataSplit[0].strip('[]')
-				prLogDataSplit.pop(0)
-			else:
+			# get frame range
+			try:
+				prLogData_FrameRange = prLogData['frameRange']
+				del prLogData['frameRange']
+			except:
 				prLogData_FrameRange = 'unknown'
 			
-			#get total render time
+			# get total render time
 			try:
-				if 'TT' in prLogDataSplit[len(prLogDataSplit) - 1]:
-					prLogData_TotalTime = dataGetFormat.dp_getFormattedRenderTime(float(prLogDataSplit[len(prLogDataSplit) - 1].split('=')[1]), 1)
-					prLogDataSplit.pop()
-				else:
-					prLogData_TotalTime = '-- : -- : -- : --'
+				prLogData_TotalTime = prLogData['TotalTime']
+				del prLogData['TotalTime']
 			except:
-				# for error when the first frame not rendering done yet
 				prLogData_TotalTime = '-- : -- : -- : --'
 
 			cmds.text(('prLogTextRange__' + prLogName + '__' + layer), l= 'Frame Range : ', p= prLogTabForm)
@@ -856,8 +844,8 @@ class UI:
 
 			#calculate each frames render time scale for frameLayout color
 			timeSheet = []
-			for frameData in prLogDataSplit:
-				timeSheet.append(float(frameData.split('=')[1].split('$')[0]))
+			for frameData in prLogData.values():
+				timeSheet.append(float(frameData.split('$')[0]))
 			
 			MidValue = UI_Controls.dp_findAverageRenderTime(timeSheet) if timeSheet else 0
 			AvgValue = sum(timeSheet) / len(timeSheet) if timeSheet else 0
@@ -894,11 +882,15 @@ class UI:
 			cmds.scrollLayout(('prLogScroll__' + prLogName + '__' + layer), cr= 1, p= prLogTabForm)
 			cmds.formLayout(('prLogFormForFrame__' + prLogName + '__' + layer), p= ('prLogScroll__' + prLogName + '__' + layer))
 			topPos = 0
-			for frameData in prLogDataSplit:
-				frameNum = frameData.split('=')[0]
-				floatTime = float(frameData.split('=')[1].split('$')[0])
+			frameList = prLogData.keys()
+			frameList.sort()
+			if cmds.attributeQuery('dp_userAttr_backward', node= querylayer, ex= 1):
+				if cmds.getAttr(querylayer + '.dp_userAttr_backward'):
+					frameList.reverse()
+			for frameNum in frameList:
+				floatTime = float(prLogData[frameNum].split('$')[0])
 				frameTime = dataGetFormat.dp_getFormattedRenderTime(floatTime, 0)
-				vrayDRNum = int(frameData.split('=')[1].split('$')[1])
+				vrayDRNum = int(prLogData[frameNum].split('$')[1])
 				vrayDRStr = str(vrayDRNum) + ' slave' + ('s' if vrayDRNum > 1 else '')
 				# get Frame color and set frameLayout
 				hueValue = hueMid
@@ -919,16 +911,16 @@ class UI:
 
 				RGB = mel.eval('hsv_to_rgb <<' + str(hueValue) + ', 1.0, 0.5>>')
 				# frame's frameLayout
-				textName = 'prLogFrame__' + prLogName + '__' + layer + str(int(float(frameNum)))
+				textName = 'prLogFrame__' + prLogName + '__' + layer + '__' + ((frameNum.split('.')[0] + '_' + frameNum.split('.')[1]) if '.' in frameNum else frameNum)
 				infoLabel = ' #' + frameNum.ljust(8) + vrayDRStr.rjust(12) + frameTime.rjust(12) + ' '
 				cmds.text(textName, l= infoLabel, al= 'center', fn= 'smallFixedWidthFont', h= 20, bgc= [RGB[0], RGB[1], RGB[2]], p= ('prLogFormForFrame__' + prLogName + '__' + layer))
 				cmds.formLayout(('prLogFormForFrame__' + prLogName + '__' + layer), e= 1, af= [(textName, 'top', topPos), (textName, 'left', 0), (textName, 'right', 0)])
 				topPos += 20
 
 			global dp_Rendering
-			if prLogDataSplit == [] and dp_Rendering:
+			if prLogData == {} and dp_Rendering:
 				frameNum = str(cmds.currentTime(q= 1) - 1) # vray jump 1 frame?
-				textName = 'prLogFrame__' + prLogName + '__' + layer + str(int(float(frameNum)))
+				textName = 'prLogFrame__' + prLogName + '__' + layer + '__' + ((frameNum.split('.')[0] + '_' + frameNum.split('.')[1]) if '.' in frameNum else frameNum)
 				infoLabel = ' #' + frameNum.ljust(8) + 'Rendering...'.rjust(12) + '--:--:--'.rjust(12) + ' '
 				cmds.text(textName, l= infoLabel, al= 'center', fn= 'smallFixedWidthFont', h= 20, bgc= [.1, .1, .1], p= ('prLogFormForFrame__' + prLogName + '__' + layer))
 				cmds.formLayout(('prLogFormForFrame__' + prLogName + '__' + layer), e= 1, af= [(textName, 'top', topPos), (textName, 'left', 0), (textName, 'right', 0)])
@@ -947,6 +939,24 @@ class UI:
 		if layer != 'No Renderable Layer':
 			if layer == 'masterLayer': layer = 'defaultRenderLayer'
 			self.dp_timeLogWindow(layer)
+
+
+	def dp_outputImageMissingAlert(self, missingFrameDict):
+
+		window = 'domino_imageAlertUI'
+
+		if cmds.window(window, ex= 1):
+			cmds.deleteUI(window)
+
+		cmds.window(window, t= 'Output Missing', w= 300, h= 500, mxb= 0, mnb= 0)
+
+		global renderMissionLayerSort
+		whatWasMissing = ''
+		for layer in renderMissionLayerSort:
+			whatWasMissing += layer + ' :\n' + (str(missingFrameDict[layer]) if missingFrameDict[layer] else '-No Missing-') + '\n\n'
+
+		cmds.formLayout('alertForm')
+		#
 
 
 	def dp_vraySlaveDetectionSettings(self, *args):
@@ -977,11 +987,6 @@ class UI:
 
 
 class UI_Controls:
-
-
-	def dp_animationOnOffStatus(self):
-
-		cmds.checkBox('animChk', e= 1, v= cmds.getAttr('defaultRenderGlobals.animation'))
 
 
 	def dp_getRendererName(self):
@@ -1034,9 +1039,34 @@ class UI_Controls:
 		self.dp_rangeCtrlGetLayerAttr()
 
 
-	def dp_changeAnimationStatus(self, *args):
-		
-		cmds.setAttr('defaultRenderGlobals.animation', cmds.checkBox('animChk', q= 1, v= 1))
+	def dp_changeAnimationStatus(self, dpSend, *args):
+
+		en = 0
+		if dpSend:
+			en = cmds.checkBox('animChk', q= 1, v= 1)
+			cmds.setAttr('defaultRenderGlobals.animation', en)
+		else:
+			en = cmds.getAttr('defaultRenderGlobals.animation')
+			cmds.checkBox('animChk', e= 1, v= en)		
+
+		cmds.text('renumFTxt', e= 1, en= en)
+		cmds.checkBox('renumFChk', e= 1, en= en)
+		cmds.text('custmText', e= 1, en= en)
+		cmds.textField('custmTxtF', e= 1, en= en)
+		cmds.iconTextButton('clrDtaBtn', e= 1, en= en)
+		enC = 1 if en and cmds.textField('custmTxtF', q= 1, text= 1) == '' else 0
+		cmds.text('strFrmTxt', e= 1, en= enC)
+		cmds.text('endFrmTxt', e= 1, en= enC)
+		cmds.text('stpFrmTxt', e= 1, en= enC)
+		cmds.floatField('strFrmFfd', e= 1, en= enC)
+		cmds.floatField('endFrmFfd', e= 1, en= enC)
+		cmds.floatField('stpFrmFfd', e= 1, en= enC)
+		enR = 1 if en and cmds.checkBox('renumFChk', q= 1, v= 1) else 0
+		cmds.text('strNumTxt', e= 1, en= enR)
+		cmds.text('stpNumTxt', e= 1, en= enR)
+		cmds.floatField('strNumFfd', e= 1, en= enR)
+		cmds.floatField('stpNumFfd', e= 1, en= enR)
+		if en: dataGetFormat.dp_checkCustomFrameRangeInputFormat()
 
 
 	def dp_changeResolution(self, *args):
@@ -1099,7 +1129,7 @@ class UI_Controls:
 					cmds.addAttr(layer, ln= 'dp_userAttr_customFrameRange', dt= 'string', h= 1)
 				cmds.setAttr((layer + '.dp_userAttr_customFrameRange'), cmds.textField('custmTxtF', q= 1, text= 1), type= 'string')
 			else:
-				en = 1
+				if cmds.getAttr('defaultRenderGlobals.animation'): en = 1
 			cmds.floatField('strFrmFfd', e= 1, en= en)
 			cmds.floatField('endFrmFfd', e= 1, en= en)
 			cmds.floatField('stpFrmFfd', e= 1, en= en)
@@ -1113,7 +1143,7 @@ class UI_Controls:
 
 	def dp_changeCustomFrameAll(self, *args):
 		
-		for layer in cmds.ls(et= 'renderLayer'):
+		for layer in cmds.listConnections('renderLayerManager.renderLayerId', d= 1):
 			if cmds.getAttr(layer + '.renderable'):
 				if not self.dp_changeCustomFrame(layer, 0):
 					break
@@ -1320,7 +1350,7 @@ class UI_Controls:
 			for item in cmds.optionMenu('layerMenu', q= 1, ils= 1):
 				cmds.deleteUI(item)
 
-		for layer in cmds.ls(et= 'renderLayer'):
+		for layer in cmds.listConnections('renderLayerManager.renderLayerId', d= 1):
 			if cmds.getAttr(layer + '.renderable'):
 				if layer in unRenderableLayers: unRenderableLayers.remove(layer)
 				cmds.menuItem('layerMenuItem_' + layer, l= layer if layer != 'defaultRenderLayer' else 'masterLayer', p= 'layerMenu')
@@ -1367,7 +1397,7 @@ class UI_Controls:
 	def dp_clearAllCustomFrameData(self, clearAll, *args):
 
 		if clearAll:
-			for layer in cmds.ls(et= 'renderLayer'):
+			for layer in cmds.listConnections('renderLayerManager.renderLayerId', d= 1):
 				if cmds.attributeQuery('dp_userAttr_customFrameRange', node= layer, ex= 1):
 					cmds.deleteAttr(layer, at= 'dp_userAttr_customFrameRange')
 		else:
@@ -1377,7 +1407,7 @@ class UI_Controls:
 			if cmds.attributeQuery('dp_userAttr_customFrameRange', node= layer, ex= 1):
 				cmds.deleteAttr(layer, at= 'dp_userAttr_customFrameRange')
 
-		cmds.textField('custmTxtF', e= 1, text= '')
+		cmds.textField('custmTxtF', e= 1, text= '', bgc= [0.16, 0.16, 0.16])
 
 		cmds.floatField('strFrmFfd', e= 1, en= 1)
 		cmds.floatField('endFrmFfd', e= 1, en= 1)
@@ -1389,29 +1419,12 @@ class UI_Controls:
 
 	def dp_openImageFolder(self, layer, *args):
 		
-		filePath = []
-		imgPrefix = ''
+		path = ''
 
 		if layer != '__imgRoot__':
-
-			currentRenderer = commonTool.dp_getOverrideData('defaultRenderGlobals.currentRenderer', layer)
-
-			if currentRenderer == 'vray':
-				imgPrefix = commonTool.dp_getOverrideData('vraySettings.fileNamePrefix', layer)
-			else:
-				imgPrefix = commonTool.dp_getOverrideData('defaultRenderGlobals.imageFilePrefix', layer)
-			tmpPrefix = cmds.getAttr('defaultRenderGlobals.imageFilePrefix')
-			if imgPrefix:
-				cmds.setAttr('defaultRenderGlobals.imageFilePrefix', imgPrefix, type= 'string')
-			if currentRenderer == 'vray':
-				filePath = cmds.renderSettings(lyr= layer, fp= 1, fin= 1)
-			else:
-				#maya renderer storage images in tmp folder
-				filePath = cmds.renderSettings(lyr= layer, fpt= 1, fin= 1)
-			if tmpPrefix:
-				cmds.setAttr('defaultRenderGlobals.imageFilePrefix', tmpPrefix, type= 'string')
-		
-		path = os.path.dirname(filePath[0]) if layer != '__imgRoot__' else cmds.workspace(q= 1, rd= 1) + cmds.workspace("images", q= 1, fre= 1)
+			path = os.path.dirname(commonTool.dp_getImageOutputPath(layer, int(cmds.currentTime(q= 1)))[0])
+		else:
+			path = cmds.workspace(q= 1, rd= 1) + cmds.workspace("images", q= 1, fre= 1)
 
 		try:
 			if cmds.file(path, q= 1, ex= 1):
@@ -1438,11 +1451,11 @@ class UI_Controls:
 
 		global dp_Rendering
 		global renderStartDate
-		attrName = ''
-		if 'renderStartDate' in globals():
-			attrName = 'dp_userAttr_timeLog_' + ''.join(renderStartDate.split(' ')[3].split('/')) + ''.join(renderStartDate.split(' ')[5].split(':'))
 
 		if not dp_Rendering:
+			attrName = ''
+			if 'renderStartDate' in globals():
+				attrName = 'dp_userAttr_timeLog_' + ''.join(renderStartDate.split(' ')[3].split('/')) + ''.join(renderStartDate.split(' ')[5].split(':'))
 
 			tabIndex = cmds.tabLayout('prLogTab', q= 1, sti= 1)
 			tabName = cmds.tabLayout('prLogTab', q= 1, tabLabel = 1)[tabIndex - 1]
@@ -1481,41 +1494,48 @@ class UI_Controls:
 
 	def dp_logTabDelete(self, layer, *args):
 
-		#delete function tab
-		uiName = cmds.tabLayout('prLogTab', q= 1, st= 1)
-		prLogName = uiName.split('__')[1]
-		if cmds.attributeQuery(prLogName + '_tabLabel', node= layer, ex= 1):
-			cmds.deleteAttr(layer, at= prLogName + '_tabLabel')
-		if cmds.attributeQuery(prLogName, node= layer, ex= 1):
-			cmds.deleteAttr(layer, at= prLogName)
-		if cmds.attributeQuery('dp_userAttr_logList', node= layer, ex= 1):
-			logList = cmds.getAttr(layer + '.dp_userAttr_logList').split(',')
-			logList.remove(prLogName)
-			cmds.setAttr((layer + '.dp_userAttr_logList'), (','.join(logList)), type= 'string')
-		#check if any tabs still there
-		isTabs = cmds.tabLayout('prLogTab', q= 1, tabLabel = 1)
-		if len(isTabs) > 1:
-			cmds.deleteUI(uiName)
-		else:
-			cmds.window('domino_timeLogUI', e= 1, vis= 0)
+		global dp_Rendering
+
+		if not dp_Rendering:
+			#delete function tab
+			uiName = cmds.tabLayout('prLogTab', q= 1, st= 1)
+			prLogName = uiName.split('__')[1]
+			if cmds.attributeQuery(prLogName + '_tabLabel', node= layer, ex= 1):
+				cmds.deleteAttr(layer, at= prLogName + '_tabLabel')
+			if cmds.attributeQuery(prLogName, node= layer, ex= 1):
+				cmds.deleteAttr(layer, at= prLogName)
+			if cmds.attributeQuery('dp_userAttr_logList', node= layer, ex= 1):
+				logList = cmds.getAttr(layer + '.dp_userAttr_logList').split(',')
+				if logList and prLogName != 'dp_userAttr_timeLog_Tmp':
+					logList.remove(prLogName)
+					cmds.setAttr((layer + '.dp_userAttr_logList'), (','.join(logList)), type= 'string')
+			#check if any tabs still there
+			isTabs = cmds.tabLayout('prLogTab', q= 1, tabLabel = 1)
+			if len(isTabs) > 1:
+				cmds.deleteUI(uiName)
+			else:
+				cmds.window('domino_timeLogUI', e= 1, vis= 0)
 
 
 	def dp_logSaving(self, layer, attrName):
 
-		tmpLogData = ''
-		if cmds.attributeQuery('dp_userAttr_timeLog_Tmp', node= layer, ex= 1):
-			tmpLogData = cmds.getAttr(layer + '.dp_userAttr_timeLog_Tmp')
-		cmds.addAttr(layer, ln= attrName, dt= 'string', h= 1)
-		cmds.setAttr(layer + '.' + attrName, tmpLogData, type= 'string')
-		cmds.setAttr(layer + '.' + 'dp_userAttr_timeLog_Tmp', 'saved', type= 'string')
-		#add attrLogName into logList
-		if cmds.attributeQuery('dp_userAttr_logList', node= layer, ex= 1):
-			otherAttrName = cmds.getAttr(layer + '.dp_userAttr_logList')
-			attrName = attrName + ',' + (otherAttrName if otherAttrName else '') # <otherAttrName> might get NoneType
-			cmds.setAttr((layer + '.dp_userAttr_logList'), attrName, type= 'string')
-		else:
-			cmds.addAttr(layer, ln= 'dp_userAttr_logList', dt= 'string', h= 1)
-			cmds.setAttr((layer + '.dp_userAttr_logList'), attrName, type= 'string')
+		global dp_Rendering
+
+		if not dp_Rendering:
+			tmpLogData = ''
+			if cmds.attributeQuery('dp_userAttr_timeLog_Tmp', node= layer, ex= 1):
+				tmpLogData = cmds.getAttr(layer + '.dp_userAttr_timeLog_Tmp')
+			cmds.addAttr(layer, ln= attrName, dt= 'string', h= 1)
+			cmds.setAttr(layer + '.' + attrName, tmpLogData, type= 'string')
+			cmds.setAttr(layer + '.' + 'dp_userAttr_timeLog_Tmp', 'saved', type= 'string')
+			#add attrLogName into logList
+			if cmds.attributeQuery('dp_userAttr_logList', node= layer, ex= 1):
+				otherAttrName = cmds.getAttr(layer + '.dp_userAttr_logList')
+				attrName = attrName + ',' + (otherAttrName if otherAttrName else '') # <otherAttrName> might get NoneType
+				cmds.setAttr((layer + '.dp_userAttr_logList'), attrName, type= 'string')
+			else:
+				cmds.addAttr(layer, ln= 'dp_userAttr_logList', dt= 'string', h= 1)
+				cmds.setAttr((layer + '.dp_userAttr_logList'), attrName, type= 'string')
 
 
 	def dp_findAverageRenderTime(self, timeSheet):
@@ -1682,7 +1702,7 @@ class UI_Controls:
 			commonTool.dp_setOverrideData(attrName, layer, cmds.checkBox(ctrlPrefix + 'Chk', q= 1, v= 1))
 			cmds.checkBox(ctrlPrefix + 'Chk', e= 1, v= commonTool.dp_getOverrideData(attrName, layer))
 			en = 0
-			if cmds.checkBox(ctrlPrefix + 'Chk', q= 1, v= 1):
+			if cmds.checkBox(ctrlPrefix + 'Chk', q= 1, v= 1) and cmds.getAttr('defaultRenderGlobals.animation'):
 				en = 1
 			cmds.text('strNumTxt', e= 1, en= en)
 			cmds.text('stpNumTxt', e= 1, en= en)
@@ -1706,7 +1726,7 @@ class UI_Controls:
 			cmds.textField('custmTxtF', e= 1, text= cmds.getAttr(layer + '.dp_userAttr_customFrameRange'))
 		else:
 			cmds.textField('custmTxtF', e= 1, text= '')
-		en = 0 if cmds.textField('custmTxtF', q= 1, text= 1) != '' else 1
+		en = 1 if cmds.textField('custmTxtF', q= 1, text= 1) == '' and cmds.getAttr('defaultRenderGlobals.animation') else 0
 		cmds.floatField('strFrmFfd', e= 1, en= en)
 		cmds.floatField('endFrmFfd', e= 1, en= en)
 		cmds.floatField('stpFrmFfd', e= 1, en= en)
@@ -1737,7 +1757,7 @@ class UI_Controls:
 		else:
 			cmds.checkBox(ctrlPrefix + 'Chk', e= 1, v= value)
 			en = 0
-			if cmds.checkBox(ctrlPrefix + 'Chk', q= 1, v= 1):
+			if cmds.checkBox(ctrlPrefix + 'Chk', q= 1, v= 1) and cmds.getAttr('defaultRenderGlobals.animation'):
 				en = 1
 			cmds.text('strNumTxt', e= 1, en= en)
 			cmds.text('stpNumTxt', e= 1, en= en)
@@ -1869,7 +1889,7 @@ class UI_Controls:
 				if collapse:
 					cmds.frameLayout('fQueueFrame', e= 1, h= 20)
 				else:
-					cmds.frameLayout('fQueueFrame', e= 1, h= 165)
+					cmds.frameLayout('fQueueFrame', e= 1, h= 185)
 
 			if PRenderFrame == 'noticeFrame':
 				if collapse:
@@ -2021,15 +2041,9 @@ class Render:
 
 		# S T A R T
 		if cmds.checkBox('fProChk', q= 1, v= 1):
-			self.dp_renderDomino_byFrames()
+			self.dp_renderDomino_byFrames(0)
 		else:
-			self.dp_renderDomino_byLayers()
-
-		if cmds.checkBox('delJChk', q= 1, v= 1):
-			if dp_RenderAbort == 0:
-				Render_Controls.dp_deleteJobsAfterRender()
-
-		cmds.currentTime(currentFrame)
+			self.dp_renderDomino_byLayers(0)
 
 		# stop main timer
 		mainEndTime = cmds.timer(e= 1, n= 'dp_MainTimer')
@@ -2042,8 +2056,19 @@ class Render:
 		if cmds.checkBox('hourMailChk', q= 1, v= 1):
 			cmds.timer(e= 1, n= 'dp_HourTimer')
 
+		# check render output
+		if not cmds.checkBox('skipImgCkChk', q= 1, v= 1) and not dp_RenderAbort:
+			Render_Controls.dp_checkRenderOutput()
+
+		# delete job layer
+		if cmds.checkBox('delJChk', q= 1, v= 1) and not dp_RenderAbort:
+			Render_Controls.dp_deleteJobsAfterRender()
+
+		# set timeline back
+		cmds.currentTime(currentFrame)
+
 		# send mail
-		if dp_RenderAbort == 0:
+		if not dp_RenderAbort:
 			if cmds.checkBox('getMailChk', q= 1, v= 1):
 				if cmds.checkBox('doneMailChk', q= 1, v= 1):
 					MailSending.dp_sendEmail('DONE')
@@ -2072,7 +2097,7 @@ class Render:
 				cmds.setAttr('vraySettings.animBatchOnly', animBatchOnly)
 
 
-	def dp_renderDomino_byFrames(self):
+	def dp_renderDomino_byFrames(self, renderMissing):
 
 		global dp_RenderAbort
 		global renderMissionLayerSort
@@ -2081,14 +2106,14 @@ class Render:
 
 		startFrameMin, endFrameMax = 0.0, 0.0
 
-		#get major frame list
+		# get major frame list
 		majorFrameList = []
 		for layer in renderMissionLayerSort: majorFrameList.extend(allFrameRange[layer])
 		majorFrameList = list(set(majorFrameList))
 		majorFrameList.sort()
 		if cmds.checkBox('backChk', q= 1, v= 1): majorFrameList.reverse()
 
-		#sorted and non-sorted
+		# sorted and non-sorted
 		jobLine = 1
 		jobEnd = 2 if len(layerWithSort) > 0 else 1
 
@@ -2100,10 +2125,10 @@ class Render:
 			else:
 				renderMissionLayer = renderMissionLayerSort
 
-			#frame loop
+			# frame loop
 			for thisFrame in majorFrameList:
 				if dp_RenderAbort == 0:
-					#layer loop
+					# layer loop
 					for layer in renderMissionLayer:
 						startFrame = commonTool.dp_getOverrideData('defaultRenderGlobals.startFrame', layer)
 						endFrame = commonTool.dp_getOverrideData('defaultRenderGlobals.endFrame', layer)
@@ -2111,25 +2136,26 @@ class Render:
 
 						currentRenderer = commonTool.dp_getOverrideData('defaultRenderGlobals.currentRenderer', layer)
 
-						#if backward - for query Next Frame
+						# if backward - for query Next Frame
 						rangeData.sort()
 						if cmds.checkBox('backChk', q= 1, v= 1): rangeData.reverse()
 
-						#add or flush renderTimeLogTmp attr in first loop
+						# add or flush renderTimeLogTmp attr in first loop
 						if not cmds.attributeQuery('dp_userAttr_timeLog_Tmp', node= layer, ex= 1):
 							cmds.addAttr(layer, ln= 'dp_userAttr_timeLog_Tmp', dt= 'string', h= 1)
-						if thisFrame == rangeData[0]:
-							cmds.setAttr(layer + '.dp_userAttr_timeLog_Tmp', dataGetFormat.dp_formattedFrameRange(layer), type= 'string')
+						if thisFrame == rangeData[0] and not renderMissing:
+							cmds.setAttr(layer + '.dp_userAttr_timeLog_Tmp', ('{"frameRange" : "' + dataGetFormat.dp_formattedFrameRange(layer) + '"}'), type= 'string')
 
-						#check if current render frame in this layer's render range
+						# check if current render frame in this layer's render range
 						if thisFrame in rangeData:
 							
 							cmds.text((layer + 'ProCurrFrame'), e= 1, vis= 1)
 
-							#prepare for check if user hit stop render (for maya renderers) - this part is for progressWindow to init and set Max value
+							# prepare for check if user hit stop render (for maya renderers) - this part is for progressWindow to init and set Max value
 							if currentRenderer != 'vray':
 								maxValue = 1
 								cmds.progressWindow(title= 'rendering frames', progress= 0, max= maxValue, status= '     Rendering....', isInterruptable= 1)
+								# force ui update
 								cmds.progressBar('mainProBar', e= 1, step= 1)
 								cmds.progressBar('mainProBar', e= 1, step= -1)
 
@@ -2139,15 +2165,15 @@ class Render:
 							else:
 								nextFrame = rangeData[rangeData.index(thisFrame) + 1]
 
-							#show folder button
+							# RENDER
+							self.dp_renderDomino_frame(thisFrame, layer, startFrame, endFrame, nextFrame) # get Cameras, set Layer, set Frame, Render!
+
+							# show folder button
 							if not cmds.iconTextButton((layer + 'folderBtn'), q= 1, vis= 1):
 								cmds.iconTextButton((layer + 'folderBtn'), e= 1, vis= 1)
 
-							#RENDER
-							self.dp_renderDomino_frame(thisFrame, layer, startFrame, endFrame, nextFrame) #get Cameras, set Layer, set Frame, Render!
 
-
-						#prepare for check if user hit stop render (for maya renderers)
+						# prepare for check if user hit stop render (for maya renderers)
 						if currentRenderer != 'vray':
 							cmds.progressWindow(endProgress= 1)
 
@@ -2161,16 +2187,16 @@ class Render:
 
 			jobLine += 1
 
-		#mission end
+		# mission end
 
 
-	def dp_renderDomino_byLayers(self):
+	def dp_renderDomino_byLayers(self, renderMissing):
 
 		global dp_RenderAbort
 		global renderMissionLayerSort
 		global allFrameRange
 
-		#layer loop
+		# layer loop
 		for layer in renderMissionLayerSort:
 			if dp_RenderAbort == 0:
 				startFrame = commonTool.dp_getOverrideData('defaultRenderGlobals.startFrame', layer)
@@ -2179,21 +2205,23 @@ class Render:
 
 				cmds.text((layer + 'ProCurrFrame'), e= 1, vis= 1)
 
-				#add or flush renderTimeLogTmp attr in first loop
+				# add or flush renderTimeLogTmp attr in first loop
 				if not cmds.attributeQuery('dp_userAttr_timeLog_Tmp', node= layer, ex= 1):
 					cmds.addAttr(layer, ln= 'dp_userAttr_timeLog_Tmp', dt= 'string', h= 1)
-				cmds.setAttr(layer + '.dp_userAttr_timeLog_Tmp', dataGetFormat.dp_formattedFrameRange(layer), type= 'string')
+				if not renderMissing:
+					cmds.setAttr(layer + '.dp_userAttr_timeLog_Tmp', ('{"frameRange" : "' + dataGetFormat.dp_formattedFrameRange(layer) + '"}'), type= 'string')
 
 				currentRenderer = commonTool.dp_getOverrideData('defaultRenderGlobals.currentRenderer', layer)
 
-				#prepare for check if user hit stop render (for maya renderers) - this part is for progressWindow to init and set Max value
+				# prepare for check if user hit stop render (for maya renderers) - this part is for progressWindow to init and set Max value
 				if currentRenderer != 'vray':
 					maxValue = len(rangeData)
 					cmds.progressWindow(title= 'rendering frames', progress= 0, max= maxValue, status= '     Rendering....', isInterruptable= 1)
+					# force ui update
 					cmds.progressBar('mainProBar', e= 1, step= 1)
 					cmds.progressBar('mainProBar', e= 1, step= -1)
 
-				#frame loop
+				# frame loop
 				for thisFrame in rangeData:
 					nextFrame = 0.0
 					if len(rangeData) - 1 == rangeData.index(thisFrame):
@@ -2201,21 +2229,20 @@ class Render:
 					else:
 						nextFrame = rangeData[rangeData.index(thisFrame) + 1]
 
-					#show folder button
+					# RENDER
+					self.dp_renderDomino_frame(thisFrame, layer, startFrame, endFrame, nextFrame) # get Cameras, set Layer, set Frame, Render!
+
+					# show folder button
 					if not cmds.iconTextButton((layer + 'folderBtn'), q= 1, vis= 1) and dp_RenderAbort == 0:
 						cmds.iconTextButton((layer + 'folderBtn'), e= 1, vis= 1)
 
-					#RENDER
-					self.dp_renderDomino_frame(thisFrame, layer, startFrame, endFrame, nextFrame) #get Cameras, set Layer, set Frame, Render!
-
-
-					#if stop
+					# if stop
 					if dp_RenderAbort == 1:
 						cmds.text((layer + 'ProStar'), e= 1, vis= 1)
 						cmds.text((layer + 'ProStar'), e= 1, bgc= [0.9, 0.2, 0.2])
 						break
 
-				#prepare for check if user hit stop render (for maya renderers)
+				# prepare for check if user hit stop render (for maya renderers)
 				if currentRenderer != 'vray':
 					cmds.progressWindow(endProgress= 1)
 
@@ -2227,7 +2254,7 @@ class Render:
 			else:
 				break
 
-		#mission end
+		# mission end
 
 
 	def dp_renderDomino_frame(self, thisFrame, layer, startFrame, endFrame, nextFrame):
@@ -2235,7 +2262,7 @@ class Render:
 		global dp_RenderAbort
 		global dp_SJ_idleEvent
 
-		#set current layer
+		# set current layer
 		cmds.editRenderLayerGlobals(currentRenderLayer= layer)
 		cmds.text((layer + 'ProStar'), e= 1, vis= 1)
 
@@ -2247,7 +2274,7 @@ class Render:
 			vrayAniBatchOnly = 1
 			cmds.setAttr('vraySettings.animBatchOnly', 0)
 
-		#set current frame
+		# set current frame
 		cmds.setAttr('defaultRenderGlobals.startFrame', thisFrame)
 		cmds.setAttr('defaultRenderGlobals.endFrame', thisFrame)
 		cmds.currentTime(thisFrame)
@@ -2257,7 +2284,7 @@ class Render:
 		else:
 			cmds.text((layer + 'ProCurrFrame'), e= 1, l= ('- ' + str(int(thisFrame) if commonTool.dp_canThisFloatBeInt(thisFrame) else thisFrame) + ' -'))
 
-		#Renumber frames
+		# Renumber frames
 		startExtension = 0.0
 		renumber = int(commonTool.dp_getOverrideData('defaultRenderGlobals.modifyExtension', layer))
 		if renumber:
@@ -2266,7 +2293,7 @@ class Render:
 			renumberFrame = float(commonTool.dp_getOverrideData('defaultRenderGlobals.startExtension', layer)) + (float(commonTool.dp_getOverrideData('defaultRenderGlobals.byExtension', layer)) * (renderCount - 1))
 			cmds.setAttr('defaultRenderGlobals.startExtension', renumberFrame)
 
-		#get all renderable camera
+		# get all renderable camera
 		Cams = cmds.ls(ca= 1)
 		renderCams = []
 		for cam in Cams:
@@ -2276,28 +2303,28 @@ class Render:
 
 		sj2VrayCmd = 'scriptJob -ro true -ie \"python(\\\"dp_Domino.dp_SJ_idleEvent = 0\\\"); pause -sec 3; if(`progressBar -q -ic $gMainProgressBar`) python(\\\"dp_Domino.dp_RenderAbort = 1\\\");\"'
 		
-		#start timer(Frame)
+		# start timer(Frame)
 		cmds.timer(s= 1, n= 'dp_FrameTimer')
 		
 		for rCam in renderCams:
-			#check if user hit stop render (for vray)
+			# check if user hit stop render (for vray)
 			if currentRenderer == 'vray':
 				if dp_SJ_idleEvent == 0: dp_SJ_idleEvent = mel.eval(sj2VrayCmd)
 				if dp_RenderAbort == 1:
 					break
 
-			#check if user hit stop render (for maya renderers)
+			# check if user hit stop render (for maya renderers)
 			if currentRenderer != 'vray':
 				if cmds.progressWindow(q= 1, isCancelled= 1):
 					dp_RenderAbort = 1
 					break
 
-			#frame start date
+			# frame start date
 			labelIndent = (cmds.window('domino_ProgressUI', q= 1, w= 1) - 184) / 2
 			renderStartDate = cmds.date(format='Frame Start :   -/DD - hh:mm:ss')
 			cmds.frameLayout('jobsProFrame', e= 1, l= renderStartDate, li= labelIndent, bgc= [.3, .4, .6])
 
-			#adjust layer and RENDER!!
+			# adjust layer and RENDER!!
 			layer = dataGetFormat.dp_layerNameAdjust(1, layer, 1)
 
 			# R E N D E R
@@ -2306,25 +2333,25 @@ class Render:
 
 			layer = dataGetFormat.dp_layerNameAdjust(2, layer, 1)
 
-			#check if user hit stop render (for vray) - double check
+			# check if user hit stop render (for vray) - double check
 			if currentRenderer == 'vray':
 				if dp_SJ_idleEvent == 0: dp_SJ_idleEvent = mel.eval(sj2VrayCmd)
 				if dp_RenderAbort == 1:
 					break
 
-			#check if user hit stop render (for maya renderers) - double check
+			# check if user hit stop render (for maya renderers) - double check
 			if currentRenderer != 'vray':
 				if cmds.progressWindow(q= 1, isCancelled= 1):
 					cmds.text((layer + 'ProCurrFrame'), e= 1, l= ('- ' + str(int(thisFrame) if commonTool.dp_canThisFloatBeInt(thisFrame) else thisFrame) + ' -'))
 					dp_RenderAbort = 1
 					break
 
-		#stop timer(Frame)
+		# stop timer(Frame)
 		thisFrameTime = cmds.timer(e= 1, n= 'dp_FrameTimer')
 		cmds.text((layer + 'lastFrameTime'), e= 1, l= dataGetFormat.dp_getFormattedRenderTime(int(thisFrameTime), 0))
 		if set_QtStyle: UI_Controls.dp_makePySideUI(layer + 'lastFrameTime', 'QLabel {color: SteelBlue}')
 
-		#restore frame range
+		# restore frame range
 		Render_Controls.dp_restoreFrameRange(startFrame, endFrame)
 		if renumber: cmds.setAttr('defaultRenderGlobals.startExtension', startExtension)
 		if vrayAniBatchOnly: cmds.setAttr('vraySettings.animBatchOnly', 1)
@@ -2333,29 +2360,56 @@ class Render:
 		if not cmds.window('domino_ProgressUI', q= 1, vis= 1): cmds.window('domino_ProgressUI', e= 1, vis= 1)
 
 		if dp_RenderAbort == 0:
-			progressStep = int(cmds.text((layer + 'ProTxtStatus'), q= 1, l= 1)) - 1
-			cmds.text((layer + 'ProTxtStatus'), e= 1, l= progressStep)
-
+			cmds.text((layer + 'ProTxtStatus'), e= 1, l= str(int(cmds.text((layer + 'ProTxtStatus'), q= 1, l= 1)) - 1))
 			if currentRenderer != 'vray':
 				cmds.progressWindow(e= 1, step= 1)
 			cmds.progressBar('mainProBar', e= 1, step= 1)
 			cmds.progressBar((layer + 'ProBar'), e= 1, step= 1)
-		
-		#add frame render time data to renderTimeLogTmp
-		renderTimeLogTmp = cmds.getAttr(layer + '.dp_userAttr_timeLog_Tmp')
-		slaveNum = str(vrayDRSupervisor.dp_vrayDRNodeNumber(currentRenderer, layer)) if vrayDR_check_Slave else '0'
-		cmds.setAttr(layer + '.dp_userAttr_timeLog_Tmp', renderTimeLogTmp + ';' + str(thisFrame) + '=' + str(thisFrameTime) + '$' + slaveNum, type= 'string')
 
-		#update layer render time
+		# get render slave number
+		offlineNum = 0
+		if currentRenderer == 'vray' and vrayDR_check_Slave:
+			offlineNum = vrayDRSupervisor.dp_vrayDRNodeOfflineCheck()
+		slaveNum = str(vrayDRSupervisor.dp_vrayDRNodeNumber(currentRenderer, layer) - offlineNum) if vrayDR_check_Slave else '0'
+
+		# add or update frame render time data to renderTimeLogTmp
+		renderTimeLogTmp = ast.literal_eval(cmds.getAttr(layer + '.dp_userAttr_timeLog_Tmp'))
+		renderTimeLogTmp[str(thisFrame)] = str(thisFrameTime) + '$' + slaveNum
+		cmds.setAttr(layer + '.dp_userAttr_timeLog_Tmp', str(renderTimeLogTmp), type= 'string')
+
+		# live update time-log window
+		if cmds.window('domino_timeLogUI', ex= 1):
+			if cmds.window('domino_timeLogUI', q= 1, t= 1)[12:] == layer:
+				prLogName = 'dp_userAttr_timeLog_Tmp'
+				# get topPos
+				topPos = cmds.formLayout(('prLogFormForFrame__' + prLogName + '__' + layer), q= 1, numberOfChildren= 1) * 20
+				# frame's frameLayout
+				frameNum = str(thisFrame)
+				frameTime = dataGetFormat.dp_getFormattedRenderTime(thisFrameTime, 0)
+				vrayDRNum = int(slaveNum)
+				vrayDRStr = str(vrayDRNum) + ' slave' + ('s' if vrayDRNum > 1 else '')
+				textName = 'prLogFrame__' + prLogName + '__' + layer + '__' + ((frameNum.split('.')[0] + '_' + frameNum.split('.')[1]) if '.' in frameNum else frameNum)
+				infoLabel = ' #' + frameNum.ljust(8) + vrayDRStr.rjust(12) + frameTime.rjust(12) + ' '
+				if cmds.text(textName, q= 1, ex= 1):
+					cmds.text(textName, e= 1, l= infoLabel)
+				else:
+					cmds.text(textName, l= infoLabel, al= 'center', fn= 'smallFixedWidthFont', h= 20, bgc= [.1, .1, .1], p= ('prLogFormForFrame__' + prLogName + '__' + layer))
+				cmds.formLayout(('prLogFormForFrame__' + prLogName + '__' + layer), e= 1, af= [(textName, 'top', topPos), (textName, 'left', 0), (textName, 'right', 0)])
+
+		# show time-log btn
+		if not cmds.iconTextButton((layer + 'timeShBtn'), q= 1, vis= 1): cmds.iconTextButton((layer + 'timeShBtn'), e= 1, vis= 1)
+
+		# update layer render time
 		layerElapTime = thisFrameTime + float(cmds.text((layer + 'elapsedTime'),q= 1, l= 1))
 		if cmds.progressBar((layer + 'ProBar'), q= 1, progress= 1) == cmds.progressBar((layer + 'ProBar'), q= 1, max= 1):
 			cmds.text((layer + 'ProCurrFrame'), e= 1, vis= 0)
 			cmds.text((layer + 'lastFrameTime'),e= 1, vis= 0)
 			cmds.iconTextButton((layer + 'timeShBtn'), e= 1, vis= 1)
 			cmds.text((layer + 'elapsedTime'),e= 1, l= dataGetFormat.dp_getFormattedRenderTime(int(layerElapTime), 1), vis= 1)
-			#add layer total render time data to renderTimeLogTmp
-			renderTimeLogTmp = cmds.getAttr(layer + '.dp_userAttr_timeLog_Tmp')
-			cmds.setAttr(layer + '.dp_userAttr_timeLog_Tmp', renderTimeLogTmp + ';TT=' + str(layerElapTime), type= 'string')
+			# add layer total render time data to renderTimeLogTmp
+			renderTimeLogTmp = ast.literal_eval(cmds.getAttr(layer + '.dp_userAttr_timeLog_Tmp'))
+			renderTimeLogTmp['TotalTime'] = str(layerElapTime)
+			cmds.setAttr(layer + '.dp_userAttr_timeLog_Tmp', str(renderTimeLogTmp), type= 'string')
 			if cmds.checkBox('getMailChk', q= 1, v= 1) and cmds.checkBox('layerMalChk', q= 1, v= 1): MailSending.dp_sendEmail(layer)
 		else:
 			cmds.text((layer + 'elapsedTime'),e= 1, l= str(layerElapTime))
@@ -2373,10 +2427,8 @@ class Render:
 			except:
 				cmds.timer(s= 1, n= 'dp_HourTimer')
 
-		# vrayDR off-line check
-		if currentRenderer == 'vray' and vrayDR_check_Slave:
-			vrayDRSupervisor.dp_vrayDRNodeOfflineCheck()
-			vrayDRSupervisor.dp_vrayDRGetSlaveIPAndCheckStatus()
+		# vrayDR slave check
+		if currentRenderer == 'vray' and vrayDR_check_Slave: vrayDRSupervisor.dp_vrayDRGetSlaveIPAndCheckStatus()
 
 
 	def dp_doRender(self, rCam):
@@ -2436,7 +2488,7 @@ class Render_Controls:
 		layerWithSort = []
 		layerWithNoSort = []
 
-		for layer in cmds.ls(et= 'renderLayer'):
+		for layer in cmds.listConnections('renderLayerManager.renderLayerId', d= 1):
 			if cmds.getAttr(layer + '.renderable'):
 				if cmds.attributeQuery('dp_userAttr_renderOrder', node= layer, ex= 1):
 					layerWithSort.append(str(cmds.getAttr(layer + '.dp_userAttr_renderOrder')) + '#' + layer)
@@ -2546,7 +2598,7 @@ class Render_Controls:
 	def dp_deleteJobsAfterRender(self):
 
 		layerToDelete = []
-		for layer in cmds.ls(et= 'renderLayer'):
+		for layer in cmds.listConnections('renderLayerManager.renderLayerId', d= 1):
 			if cmds.getAttr(layer + '.renderable') and mel.eval('gmatch ' + layer.upper() + ' \"*_RENDERJOB*\"'):
 				layerToDelete.append(layer)
 
@@ -2587,6 +2639,70 @@ class Render_Controls:
 				mel.eval('$gUseScenePanelConfig = true')
 			if file_uc:
 				mel.eval('file -uc true')
+
+
+	def dp_checkRenderOutput(self):
+
+		global renderMissionLayerSort
+		global allFrameRange
+		
+		missingFrameDict = missingFrameDict.fromkeys(renderMissionLayerSort, [])
+		isFrameMissing = 0
+		isCheckCanceled = 0
+		mainFrameNum = int(cmds.text('mainFrameNum', q= 1, l= 1))
+		checkedFrame = 0
+		missingFrame = 0
+		cmds.progressWindow(title= 'Checking Output', progress= 0, max= mainFrameNum, status= 'Checking outputted images...', isInterruptable= 1)
+		for layer in renderMissionLayerSort:
+			for frame in allFrameRange[layer]:
+				if cmds.progressWindow(q= 1, isCancelled= 1):
+					isCheckCanceled = 1; break
+				# renumber frame if needed
+				if cmds.getAttr('defaultRenderGlobals.modifyExtension'):
+					frame = ((frame - startFrame) / byFrame) * cmds.getAttr('defaultRenderGlobals.byExtension') + cmds.getAttr('defaultRenderGlobals.startExtension')
+				# get image path
+				filePath = commonTool.dp_getImageOutputPath(layer, int(round(frame)))
+				# check image exist
+				if not cmds.file(filePath[0], q= 1, ex= 1):
+					missingFrameDict[layer].append(frame); missingFrame += 1; isFrameMissing = 1
+				checkedFrame += 1
+				cmds.progressWindow(e= 1, step= 1, status= 'Layer: ' + layer + '\n' + str(checkedFrame) + ' frame' + ('s' if checkedFrame > 1 else '') + ' checked\n' + str(checkedFrame) + ' missing')
+
+			if isCheckCanceled: break
+
+		if isFrameMissing and not isCheckCanceled:
+			if len(cmds.textScrollList('fileScrollList', q= 1, ai= 1)) > 1:
+				self.dp_renderMissingFrame(missingFrameDict)
+			else:
+				UI.dp_outputImageMissingAlert(missingFrameDict)
+
+
+	def dp_renderMissingFrame(self, missingFrameDict):
+
+		global renderMissionLayerSort
+		global layerWithSort
+		global allFrameRange
+
+		# change render range
+		allFrameRange = missingFrameDict
+		layerListTmp = renderMissionLayerSort
+		for layer in layerListTmp:
+			if not missingFrameDict[layer]:
+				renderMissionLayerSort.remove(layer)
+				layerWithSort.remove(layer)
+			# fix render progressBar
+			for frame in missingFrameDict[layer]:
+				cmds.progressBar((layer + 'ProBar'), e= 1, step= -1)
+				cmds.progressBar('mainProBar', e= 1, step= -1)
+
+		# send email notice
+		MailSending.dp_sendEmail('MISSING')
+
+		# S T A R T
+		if cmds.checkBox('fProChk', q= 1, v= 1):
+			self.dp_renderDomino_byFrames(1)
+		else:
+			self.dp_renderDomino_byLayers(1)
 
 
 
@@ -2631,7 +2747,7 @@ class dataGetFormat:
 					cmds.setAttr(layerToAdj + '.dp_userAttr_hasExtraJob', hasExtraJob, type= 'string')
 
 				#rename Layer
-				for layer in cmds.ls(et= 'renderLayer'):
+				for layer in cmds.listConnections('renderLayerManager.renderLayerId', d= 1):
 					if layer == newLayerName and layer != layerToAdj:
 						cmds.rename(layer, 'giveMeOneFrameRenderTimeAndIWillGetYourNameBack')
 
@@ -2653,7 +2769,7 @@ class dataGetFormat:
 			if layerToAdj != 'defaultRenderLayer':
 				cmds.rename(layerToAdj, newLayerName)
 
-			for layer in cmds.ls(et= 'renderLayer'):
+			for layer in cmds.listConnections('renderLayerManager.renderLayerId', d= 1):
 				if layer == 'giveMeOneFrameRenderTimeAndIWillGetYourNameBack':
 					cmds.rename(layer, layerToAdj)
 
@@ -2746,7 +2862,7 @@ class dataGetFormat:
 			byFrame = commonTool.dp_getOverrideData('defaultRenderGlobals.byFrameStep', querylayer)
 			frameRangeString += '@ ' + str(byFrame) if byFrame != 1 and byFrame != -1 else ''
 
-		return '[' + frameRangeString + ']'
+		return frameRangeString
 
 
 	def dp_getFormattedRenderTime(self, elapsedTime, includeDay):
@@ -2827,7 +2943,7 @@ class vrayDRSupervisor:
 					except:
 						offlineIP.append(server_list[count])
 					prSocket.close()
-			self.dp_vrayDRturnSlaveOff(offlineIP)
+			if vrayDR_kick_Slave: self.dp_vrayDRturnSlaveOff(offlineIP)
 
 
 	def dp_vrayDRNodeNumber(self, currentRenderer, layer):
@@ -2848,6 +2964,7 @@ class vrayDRSupervisor:
 	def dp_vrayDRNodeOfflineCheck(self):
 
 		global dp_outputLogPath
+		offlineNum = 0
 		if cmds.file(dp_outputLogPath, q= 1, ex= 1):
 			outputLog = open(dp_outputLogPath, 'r')
 			offlineIP = []
@@ -2859,33 +2976,38 @@ class vrayDRSupervisor:
 				if 'Render host' and 'is not responding' in line:
 					offlineIP.append(line.split('(')[1].split(')')[0].split(':')[0])
 			outputLog.close()
+			
 			if offlineIP:
-				self.dp_vrayDRturnSlaveOff(offlineIP)
+				offlineIP = list(set(offlineIP))
+				if vrayDR_kick_Slave:
+					self.dp_vrayDRturnSlaveOff(offlineIP)
+				else:
+					offlineNum = len(offlineIP)
 				outputLog = open(dp_outputLogPath, 'w')
 				outputLog.write('')
 				outputLog.close()
+
+		return offlineNum
 
 
 	def dp_vrayDRturnSlaveOff(self, offlineIP):
 
 		global server_list
 		global server_status
-		if vrayDR_kick_Slave:
-			offlineIP = list(set(offlineIP))
-			for IP in offlineIP:
-				try:
-					server_status[server_list.index(IP)] = 'Disable'
-					if cmds.getAttr('vraySettings.sys_distributed_rendering_on'):
-						cmds.warning('dp_Domino: vrayDR slave off-line : [' + IP + '], setted to [Disable]')
-				except:
-					pass
-			statusFile = open(mel.eval('vrayFindServersFile("server_status.tmp")'), 'w')
-			statusInfo = ''
-			for status in server_status:
-				statusInfo += status + '\n'
-			statusFile.write(statusInfo)
-			statusFile.close()
-			mel.eval('if(`window -ex VRayDR`){ vraySwitchServerStatus(); }')
+		for IP in offlineIP:
+			try:
+				server_status[server_list.index(IP)] = 'Disable'
+				if cmds.getAttr('vraySettings.sys_distributed_rendering_on'):
+					cmds.warning('dp_Domino: vrayDR slave off-line : [' + IP + '], setted to [Disable]')
+			except:
+				pass
+		statusFile = open(mel.eval('vrayFindServersFile("server_status.tmp")'), 'w')
+		statusInfo = ''
+		for status in server_status:
+			statusInfo += status + '\n'
+		statusFile.write(statusInfo)
+		statusFile.close()
+		mel.eval('if(`window -ex VRayDR`){ vraySwitchServerStatus(); }')
 
 
 
@@ -3044,6 +3166,30 @@ class commonTool:
 		for sj in cmds.scriptJob(lj= 1):
 			if 'domino_mainUI' in sj and 'PostSceneRead' in sj:
 				print sj.strip()
+
+
+	def dp_getImageOutputPath(self, layer, frame):
+
+		filePath = []
+		imgPrefix = ''
+		currentRenderer = self.dp_getOverrideData('defaultRenderGlobals.currentRenderer', layer)
+
+		if currentRenderer == 'vray':
+			imgPrefix = self.dp_getOverrideData('vraySettings.fileNamePrefix', layer)
+		else:
+			imgPrefix = self.dp_getOverrideData('defaultRenderGlobals.imageFilePrefix', layer)
+		tmpPrefix = cmds.getAttr('defaultRenderGlobals.imageFilePrefix')
+		if imgPrefix:
+			cmds.setAttr('defaultRenderGlobals.imageFilePrefix', imgPrefix, type= 'string')
+		if currentRenderer == 'vray':
+			filePath = cmds.renderSettings(lyr= layer, fp= 1, gin= ('%0' + str(cmds.getAttr('vraySettings.fileNamePadding')) + 'd') % (frame))
+		else:
+			#maya renderer storage images in tmp folder
+			filePath = cmds.renderSettings(lyr= layer, fpt= 1, gin= ('%0' + str(cmds.getAttr('defaultRenderGlobals.extensionPadding')) + 'd') % (frame))
+		if tmpPrefix:
+			cmds.setAttr('defaultRenderGlobals.imageFilePrefix', tmpPrefix, type= 'string')
+		
+		return filePath
 
 
 
@@ -3305,7 +3451,7 @@ class resetEnvironment:
 		print 'Deleteing [dp_userAttr_..] attributes...\n'
 		print '--+--+--+--+--+--+--+--+--+--+--\n'
 
-		for layer in cmds.ls(et= 'renderLayer'):
+		for layer in cmds.listConnections('renderLayerManager.renderLayerId', d= 1):
 			print '	<' + layer + '> :'
 			attrInNode = cmds.listAttr(layer, r= 1, ud= 1)
 			attrDeleted = []
@@ -3425,3 +3571,24 @@ init_dp_Domino = init_dp_Domino()
 '''/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/'''
 '''/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ by D A V I D .p \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/'''
 '''/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/'''
+
+
+'''
+
+collect missing frames - working on it
+
+* renderingTimeLog live update - done
+
+* animation check - done
+
+- improve email content
+
+* if no kick slave, find a new way to caculat slave Num - done, need test
+
+
+
+using python script and mayaSoftware to render a textured surfaceShader assigned triangulate mesh, will freeze.
+
+http://www.creativecrash.com/forums/python/topics/rendering-freeze-using-python-render-command-and-surfaceshader
+
+'''
