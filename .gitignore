@@ -2,6 +2,13 @@
 __pycache__/
 *.py[cod]
 
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
 # C extensions
 *.so
 
